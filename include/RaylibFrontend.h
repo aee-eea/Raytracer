@@ -1,23 +1,27 @@
 #pragma once
 #include "raylib.h"
+#include "IFrontend.h"
+#include "Raytracer.h"
 #include <string>
 #include <vector>
 
-class RaylibFrontend{
+class RaylibFrontend : public IFrontend{
 public:
     RaylibFrontend(int windowWidth = 800, int windowHeight = 400, const std::string& windowTitle = "Raylib");
-    void start();
+    void start(Raytracer& raytracer);
+    void putPixel(int x, int y, PixColor color) override;
+    int getImageWidth() const override;
+    int getImageHeight() const override;
 
 private:
     int windowWidth;
     int windowHeight;
     std::string windowTitle;
 
-    std::vector<Color> framebuffer;
+    std::vector<PixColor> framebuffer;
     Texture2D textureOnGpu;
 
     void input();
     void update();
-    void render();
-    void changePixel(int x, int y, Color color);
+    void render(Raytracer& raytracer);
 };

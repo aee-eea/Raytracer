@@ -13,9 +13,16 @@ FetchContent_Declare(
     GIT_TAG 6.0
 )
 
-FetchContent_MakeAvailable(raylib)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.3
+)
 
-add_executable(raytracer src/main.cpp src/RaylibFrontend.cpp)
+FetchContent_MakeAvailable(raylib)
+FetchContent_MakeAvailable(glm)
+
+add_executable(raytracer src/main.cpp src/RaylibFrontend.cpp src/Raytracer.cpp src/Ray.cpp)
 
 target_include_directories(raytracer PUBLIC include)
-target_link_libraries(raytracer PRIVATE raylib)
+target_link_libraries(raytracer PRIVATE raylib glm)
