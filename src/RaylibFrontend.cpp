@@ -4,11 +4,11 @@
 #include "Raytracer.h"
 
 RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight, const std::string& windowTitle)
- : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle}
+ : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle}, renderWidth{windowWidth}, renderHeight{windowHeight}
 {
     InitWindow(windowWidth,windowHeight,windowTitle.c_str());
-    framebuffer.resize(windowWidth * windowHeight);
-    textureOnGpu = LoadTextureFromImage(GenImageColor(windowWidth, windowHeight, BLUE));
+    framebuffer.resize(renderWidth * renderHeight);
+    textureOnGpu = LoadTextureFromImage(GenImageColor(renderWidth,renderHeight, BLUE));
 }
 void RaylibFrontend::start(Raytracer& raytracer){
     if(!IsWindowReady()){
@@ -23,6 +23,11 @@ void RaylibFrontend::start(Raytracer& raytracer){
 }
 void RaylibFrontend::input(){}
 void RaylibFrontend::update(){
+    if(IsWindowResized()){
+        SetWindowTitle("RESIZED!!!");
+        windowHeight = GetScreenHeight();
+        windowWidth = GetScreenWidth();
+    }
 }
 void RaylibFrontend::render(Raytracer& raytracer){
     raytracer.render(*this);
@@ -33,7 +38,7 @@ void RaylibFrontend::render(Raytracer& raytracer){
 
     DrawTexturePro(
         textureOnGpu,
-        Rectangle{0,0,static_cast<float>(windowWidth),static_cast<float>(windowHeight)},
+        Rectangle{0,0,static_cast<float>(renderWidth),static_cast<float>(renderHeight)},
         Rectangle{0,0,static_cast<float>(windowWidth),static_cast<float>(windowHeight)},
         Vector2{0,0},
         0.0f,
@@ -42,12 +47,12 @@ void RaylibFrontend::render(Raytracer& raytracer){
 }
 
 void RaylibFrontend::putPixel(int x, int y, PixColor color){
-    framebuffer[x + (y * windowWidth)] = color;
+    framebuffer[x + (y * renderWidth)] = color;
 }
 
 int RaylibFrontend::getImageWidth() const{
-    return windowWidth;
+    return renderWidth;
 }
 int RaylibFrontend::getImageHeight() const{
-    return windowHeight;
+    return renderHeight;
 }

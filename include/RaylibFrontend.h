@@ -16,6 +16,8 @@ public:
 private:
     int windowWidth;
     int windowHeight;
+    int renderWidth;
+    int renderHeight;
     std::string windowTitle;
 
     std::vector<PixColor> framebuffer;

@@ -1,6 +1,9 @@
 #pragma once
 #include "IFrontend.h"
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
+#include "IHit.h"
+#include <vector>
+#include <memory>
 
 class Raytracer{
 public:
@@ -20,4 +23,5 @@ private:
     glm::dvec3 viewportUpperLeftPos;
     glm::dvec3 firstPixelPos;
 
+    std::vector<std::unique_ptr<IHit>> hittableObjects;
 };

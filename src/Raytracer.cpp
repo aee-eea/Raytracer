@@ -1,6 +1,8 @@
 #include "Raytracer.h"
 #include "IFrontend.h"
 #include "Ray.h"
+#include "Sphere.h"
+#include <limits>
 
 Raytracer::Raytracer(const IFrontend& frontend,double viewportHeight)
     :viewportHeight{viewportHeight} {
@@ -17,6 +19,9 @@ Raytracer::Raytracer(const IFrontend& frontend,double viewportHeight)
                                 - (viewportU / 2.0)
                                 - (viewportV / 2.0);
         firstPixelPos = viewportUpperLeftPos + (pixelDeltaU * 0.5) + (pixelDeltaV * 0.5);
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.0},0.5));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1.0},100));
 }
 
 void Raytracer::render(IFrontend& frontend){
@@ -29,7 +34,7 @@ void Raytracer::render(IFrontend& frontend){
             glm::dvec3 rayDir = pixelCenter - cameraPos;
             Ray ray (cameraPos, glm::normalize(rayDir));
 
-            frontend.putPixel(x,y,ray.rayColor());
+            frontend.putPixel(x,y,ray.rayColor(hittableObjects,Interval{0,infinity}));
         }
     }
 }

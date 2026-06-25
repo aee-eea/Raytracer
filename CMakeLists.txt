@@ -22,7 +22,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(raylib)
 FetchContent_MakeAvailable(glm)
 
-add_executable(raytracer src/main.cpp src/RaylibFrontend.cpp src/Raytracer.cpp src/Ray.cpp)
+add_executable(raytracer src/main.cpp 
+src/RaylibFrontend.cpp 
+src/Raytracer.cpp 
+src/Ray.cpp 
+src/Sphere.cpp 
+src/IHit.cpp
+src/Interval.cpp)
 
 target_include_directories(raytracer PUBLIC include)
 target_link_libraries(raytracer PRIVATE raylib glm)
