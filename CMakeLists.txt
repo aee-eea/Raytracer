@@ -28,7 +28,8 @@ src/Raytracer.cpp
 src/Ray.cpp 
 src/Sphere.cpp 
 src/IHit.cpp
-src/Interval.cpp)
+src/Interval.cpp
+src/Camera.cpp)
 
 target_include_directories(raytracer PUBLIC include)
 target_link_libraries(raytracer PRIVATE raylib glm)
