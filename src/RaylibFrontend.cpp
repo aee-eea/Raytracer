@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "RaylibFrontend.h"
 #include "Raytracer.h"
+#include <chrono>
 
 RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight, const std::string& windowTitle)
  : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle}, renderWidth{windowWidth}, renderHeight{windowHeight}
@@ -30,7 +31,10 @@ void RaylibFrontend::update(){
     }
 }
 void RaylibFrontend::render(Raytracer& raytracer){
+    std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
     raytracer.render(*this);
+    std::chrono::high_resolution_clock::time_point after = std::chrono::high_resolution_clock::now();
+    std::cout << "frame took " << std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count()) << std::endl;
     UpdateTexture(textureOnGpu,framebuffer.data());
 
     BeginDrawing();

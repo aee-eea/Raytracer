@@ -5,9 +5,10 @@
 Sphere::Sphere(const glm::dvec3& center, double radius): center{center},radius{radius}{}
 
 bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
-    glm::dvec3 oc = center - ray.origin();
-    double a = glm::dot(ray.direction(), ray.direction());
-    double b = -2.0 * glm::dot(ray.direction(), oc);
+    glm::dvec3 oc = center - ray.orig;
+    glm::dvec3 dir = ray.dir;
+    double a = glm::dot(dir,dir);
+    double b = -2.0 * glm::dot(dir, oc);
     double c = glm::dot(oc,oc) - (radius * radius);
 
     double discriminant = b*b - 4*a*c;

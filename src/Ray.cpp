@@ -12,11 +12,7 @@ glm::dvec3 Ray::at(double t) const {
     return orig + dir * t;
 }
 
-const glm::dvec3& Ray::origin() const  { return orig; }
-
-const glm::dvec3& Ray::direction() const { return dir; }
-
-PixColor Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects,Interval rayT){
+glm::dvec3 Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects,Interval rayT) const{
     glm::dvec3 outputColor{0,0,0};
     double closest = rayT.max;
 
@@ -30,6 +26,6 @@ PixColor Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects
             outputColor = 0.5 * glm::dvec3{rec.normal.x + 1.0,rec.normal.y + 1.0,rec.normal.z + 1.0};
         }
     }
-    return PixColor{.r = static_cast<uint8_t>(outputColor.x * 255.999),.g = static_cast<uint8_t>(outputColor.y * 255.999),.b = static_cast<uint8_t>(outputColor.z * 255.999), .a = 255};
+    return outputColor;
 
 }
