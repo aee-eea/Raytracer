@@ -7,7 +7,7 @@
 
 class RaytracerCamera{
 public:
-    RaytracerCamera(int imageWidth, int imageHeight, double viewportHeight = 2.0, int samples=1);
+    RaytracerCamera(int imageWidth, int imageHeight, double viewportHeight = 2.0, int samples=10,int recursionDepth=50);
 
     glm::dvec3 renderPixel(int x, int y, std::vector<std::unique_ptr<IHit>>& hittableObjects);
 
@@ -19,6 +19,7 @@ private:
     double viewportHeight;
     double viewportWidth;
     int samplesPerPixel{1};
+    int maxDepth{50};
     glm::dvec3 cameraPos{0,0,0};
 
     glm::dvec3 viewportU;

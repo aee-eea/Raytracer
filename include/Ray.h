@@ -12,5 +12,5 @@ public:
 
     Ray(const glm::dvec3& origin, const glm::dvec3& direction);
     glm::dvec3 at(double t) const;
-    glm::dvec3 rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects,Interval rayT) const;
+    glm::dvec3 rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects,Interval rayT,int depth) const;
 };

@@ -7,7 +7,7 @@
 #include "PixColor.h"
 
 Raytracer::Raytracer(const IFrontend& frontend)
-    : cam(frontend.getImageWidth(),frontend.getImageHeight(),2.0,10) {
+    : cam(frontend.getImageWidth(),frontend.getImageHeight(),2.0,10,10) {
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.0},0.5));
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1.0},100));
 }

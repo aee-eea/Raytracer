@@ -7,7 +7,7 @@
 
 class RaylibFrontend : public IFrontend{
 public:
-    RaylibFrontend(int windowWidth = 800, int windowHeight = 400, const std::string& windowTitle = "Raylib");
+    RaylibFrontend(int windowWidth = 800, int windowHeight = 400, int renderWidth = 800, int renderHeight = 400, const std::string& windowTitle = "Raylib");
     void start(Raytracer& raytracer);
     void putPixel(int x, int y, PixColor color) override;
     int getImageWidth() const override;

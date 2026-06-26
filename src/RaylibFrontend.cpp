@@ -4,8 +4,8 @@
 #include "Raytracer.h"
 #include <chrono>
 
-RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight, const std::string& windowTitle)
- : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle}, renderWidth{windowWidth}, renderHeight{windowHeight}
+RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight,int renderWidth, int renderHeight, const std::string& windowTitle)
+ : windowWidth{windowWidth},windowHeight{windowHeight},renderWidth{renderWidth},renderHeight{renderHeight},windowTitle{windowTitle}
 {
     InitWindow(windowWidth,windowHeight,windowTitle.c_str());
     framebuffer.resize(renderWidth * renderHeight);
@@ -25,7 +25,6 @@ void RaylibFrontend::start(Raytracer& raytracer){
 void RaylibFrontend::input(){}
 void RaylibFrontend::update(){
     if(IsWindowResized()){
-        SetWindowTitle("RESIZED!!!");
         windowHeight = GetScreenHeight();
         windowWidth = GetScreenWidth();
     }
