@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include "Ray.h"
-#include "RandomFunc.h"
+#include "VectorHelpers.h"
+#include "Raytracer.h"
 #include <glm/glm.hpp>
 RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight, double viewportHeight, int samples, int recursionDepth)
 : viewportHeight{viewportHeight}, samplesPerPixel{samples}, maxDepth{recursionDepth} {
@@ -19,7 +20,7 @@ RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight, double viewpor
         firstPixelPos = viewportUpperLeftPos + (pixelDeltaU * 0.5) + (pixelDeltaV * 0.5);
 }
 
-glm::dvec3 RaytracerCamera::renderPixel(int x, int y, std::vector<std::unique_ptr<IHit>>& hittableObjects){
+glm::dvec3 RaytracerCamera::renderPixel(int x, int y, const Raytracer& env){
     glm::dvec3 finalColor = {0,0,0};
     
 
@@ -29,7 +30,7 @@ glm::dvec3 RaytracerCamera::renderPixel(int x, int y, std::vector<std::unique_pt
         glm::dvec3 rayDir = pixelCenter - cameraPos;
         Ray ray (cameraPos, glm::normalize(rayDir));
 
-        finalColor += ray.rayColor(hittableObjects,Interval{0.001, infinity},maxDepth);
+        finalColor += ray.rayColor(env,Interval{0.001, infinity},maxDepth);
     }
 
     finalColor *= (1.0 / samplesPerPixel);

@@ -1,8 +1,10 @@
 #include "Sphere.h"
 #include "IHit.h"
 #include "Ray.h"
+#include "IMaterial.h"
 
-Sphere::Sphere(const glm::dvec3& center, double radius): center{center},radius{radius}{}
+Sphere::Sphere(const glm::dvec3& center, double radius, MaterialHandle materialHandle)
+ :  center{center},radius{std::fmax(0,radius)}, matHandle{materialHandle}{}
 
 bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     glm::dvec3 oc = center - ray.orig;
@@ -27,5 +29,6 @@ bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     record.point = ray.at(record.t);
     glm::dvec3 outwardNormal = (record.point - center) / radius;
     record.setFaceNormal(ray, outwardNormal);
+    record.material = matHandle;
     return true;
 }

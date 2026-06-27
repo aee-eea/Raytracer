@@ -5,11 +5,29 @@
 #include <limits>
 #include "Camera.h"
 #include "PixColor.h"
+#include "Handles.h"
+#include "LambertianMaterial.h"
+#include "MetalMaterial.h"
+#include "DielectricMaterial.h"
+
+static double linearToGamma(double linear);
+
 
 Raytracer::Raytracer(const IFrontend& frontend)
-    : cam(frontend.getImageWidth(),frontend.getImageHeight(),2.0,10,10) {
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.0},0.5));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1.0},100));
+    : cam(frontend.getImageWidth(),frontend.getImageHeight(),2.0,50,50) {
+        MaterialHandle red = assets.addMaterial<LambertianMaterial>(glm::dvec3{1,0,0});
+        MaterialHandle green = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,1,0});
+        MaterialHandle blue = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,0,1});
+        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.7,0.7,0.7},0.3);
+        MaterialHandle hollowGlass = assets.addMaterial<DielectricMaterial>(1.50);
+        MaterialHandle hollowAir = assets.addMaterial<DielectricMaterial>(1.00 / 1.50);
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.0},0.5,red));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-3},1,blue));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1.0},100,green));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.2,0.2,-1.6},0.6,whiteMetal));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.3,0,-0.9},0.5,hollowGlass));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.3,0,-0.9},0.4,hollowAir));
 }
 
 void Raytracer::render(IFrontend& frontend){
@@ -19,7 +37,12 @@ void Raytracer::render(IFrontend& frontend){
 
     for(int y = 0; y < imgHeight; y++){
         for(int x = 0; x < imgWidth; x++){
-            glm::dvec3 pixelColor = cam.renderPixel(x,y,hittableObjects);
+            glm::dvec3 pixelColor = cam.renderPixel(x,y,*this);
+
+            pixelColor.x = linearToGamma(pixelColor.x);
+            pixelColor.y = linearToGamma(pixelColor.y);
+            pixelColor.z = linearToGamma(pixelColor.z);
+
             pixelColor.x = intensity.clamp(pixelColor.x);
             pixelColor.y = intensity.clamp(pixelColor.y);
             pixelColor.z = intensity.clamp(pixelColor.z);
@@ -29,4 +52,20 @@ void Raytracer::render(IFrontend& frontend){
                                             .a = 255});
         }
     }
+}
+
+
+
+static double linearToGamma(double linear){
+    if(linear > 0){
+        return glm::sqrt(linear);
+    }
+    return 0;
+}
+
+const std::vector<std::unique_ptr<IHit>>& Raytracer::getHittables() const{
+    return hittableObjects;
+}
+const AssetManager& Raytracer::getAssets() const{
+    return assets;
 }

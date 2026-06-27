@@ -29,7 +29,11 @@ src/Ray.cpp
 src/Sphere.cpp 
 src/IHit.cpp
 src/Interval.cpp
-src/Camera.cpp)
+src/Camera.cpp
+src/AssetManager.cpp
+src/LambertianMaterial.cpp
+src/MetalMaterial.cpp
+src/DielectricMaterial.cpp)
 
 target_include_directories(raytracer PUBLIC include)
 target_link_libraries(raytracer PRIVATE raylib glm)

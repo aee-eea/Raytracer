@@ -3,13 +3,15 @@
 #include <memory>
 #include <vector>
 #include "IHit.h"
-#include "RandomFunc.h"
+#include "VectorHelpers.h"
+
+class Raytracer;// circular dependency
 
 class RaytracerCamera{
 public:
     RaytracerCamera(int imageWidth, int imageHeight, double viewportHeight = 2.0, int samples=10,int recursionDepth=50);
 
-    glm::dvec3 renderPixel(int x, int y, std::vector<std::unique_ptr<IHit>>& hittableObjects);
+    glm::dvec3 renderPixel(int x, int y, const Raytracer& env);
 
     glm::dvec3 sampleSquare() const;
 

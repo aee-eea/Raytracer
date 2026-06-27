@@ -1,8 +1,10 @@
 #include "Ray.h"
 #include "glm/glm.hpp"
 #include "IHit.h"
-#include "RandomFunc.h"
+#include "VectorHelpers.h"
 #include "Interval.h"
+#include "IMaterial.h"
+#include "Raytracer.h"
 #include <vector>
 #include <cstdint>
 #include <iostream>
@@ -14,7 +16,7 @@ glm::dvec3 Ray::at(double t) const {
     return orig + dir * t;
 }
 
-glm::dvec3 Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjects,Interval rayT, int depth) const{
+glm::dvec3 Ray::rayColor(const Raytracer& env,Interval rayT, int depth) const{
     if(depth <= 0){return glm::dvec3{0,0,0};}
 
     glm::dvec3 outputColor{0,0,0};
@@ -24,7 +26,7 @@ glm::dvec3 Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjec
     HitRecord rec{};
 
     //find the closest
-    for(const auto& surface : hittableObjects){
+    for(const auto& surface : env.getHittables()){
         if(surface->hit(*this,Interval{rayT.min,closest},rec)){
             hitted = true;
             closest = rec.t;
@@ -32,9 +34,12 @@ glm::dvec3 Ray::rayColor(const std::vector<std::unique_ptr<IHit>>& hittableObjec
     }
 
     if(hitted){
-        glm::dvec3 dirBounce = randomUnitOnHemisphere(rec.normal);
-        Ray bounce(rec.point,dirBounce);
-        return  0.5 * bounce.rayColor((hittableObjects), Interval{0.001,infinity}, depth - 1);
+        Ray scattered(glm::dvec3{0,0,0},glm::dvec3{0,0,0});
+        glm::dvec3 attentuation{0,0,0};
+        if(env.getAssets().getMaterial(rec.material).scatter(*this,rec,attentuation,scattered)){
+            Ray nextRay(scattered.orig, scattered.dir);
+            return attentuation * nextRay.rayColor(env,Interval{0.001,infinity},depth - 1);
+        }
     }
 
     double blendFactor = 0.5 * (dir.y + 1.0);

@@ -33,3 +33,12 @@ inline glm::dvec3 randomUnitOnHemisphere(const glm::dvec3 normal){
         return -vector;
     }
 }
+inline glm::dvec3 reflect(const glm::dvec3 vector, const glm::dvec3 normal){
+    return vector - 2 * glm::dot(vector,normal) * normal;
+}
+inline glm::dvec3 refract(const glm::dvec3 uv, const glm::dvec3 normal, double etaiEtat){
+    double cosTheta = std::fmin(glm::dot(-uv,normal),1.0);
+    glm::dvec3 rayOutPerp = etaiEtat * (uv + (cosTheta * normal));
+    glm::dvec3 rayOutParallel = -glm::sqrt(std::fabs(1.0 - glm::dot(rayOutPerp,rayOutPerp))) * normal;
+    return rayOutPerp + rayOutParallel;
+}
