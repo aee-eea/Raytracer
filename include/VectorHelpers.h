@@ -33,6 +33,14 @@ inline glm::dvec3 randomUnitOnHemisphere(const glm::dvec3 normal){
         return -vector;
     }
 }
+inline glm::dvec3 randomInUnitDisk(){
+    while(true){
+        glm::dvec3 point = glm::dvec3(randomDouble(-1,1),randomDouble(-1,1),0);
+        if(glm::dot(point,point) < 1){
+            return point;
+        }
+    }
+}
 inline glm::dvec3 reflect(const glm::dvec3 vector, const glm::dvec3 normal){
     return vector - 2 * glm::dot(vector,normal) * normal;
 }

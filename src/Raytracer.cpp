@@ -14,20 +14,18 @@ static double linearToGamma(double linear);
 
 
 Raytracer::Raytracer(const IFrontend& frontend)
-    : cam(frontend.getImageWidth(),frontend.getImageHeight(),2.0,50,50) {
-        MaterialHandle red = assets.addMaterial<LambertianMaterial>(glm::dvec3{1,0,0});
-        MaterialHandle green = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,1,0});
-        MaterialHandle blue = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,0,1});
-        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.7,0.7,0.7},0.3);
-        MaterialHandle hollowGlass = assets.addMaterial<DielectricMaterial>(1.50);
-        MaterialHandle hollowAir = assets.addMaterial<DielectricMaterial>(1.00 / 1.50);
+    : cam(frontend.getImageWidth(),frontend.getImageHeight()) {
+        MaterialHandle ground = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.8,0.8,0});
+        MaterialHandle center = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.1,0.2,0.5});
+        MaterialHandle left = assets.addMaterial<DielectricMaterial>(1.50);
+        MaterialHandle bubble = assets.addMaterial<DielectricMaterial>(1.00/1.50);
+        MaterialHandle right = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0.8},0.2);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.0},0.5,red));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-3},1,blue));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1.0},100,green));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.2,0.2,-1.6},0.6,whiteMetal));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.3,0,-0.9},0.5,hollowGlass));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.3,0,-0.9},0.4,hollowAir));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1},100,ground));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.2},0.5,center));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1,0,-1},0.5,left));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.0,0,-1.0},0.4,bubble));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.0,0,-1},0.5,right));
 }
 
 void Raytracer::render(IFrontend& frontend){
