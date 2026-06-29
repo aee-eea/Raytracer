@@ -10,8 +10,8 @@ static glm::dvec3 sampleSquare();
 RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight){
     changeImageSize(imageWidth,imageHeight);
     lookAt(glm::dvec3{0,0,-1},glm::dvec3{0,1,0});
-    changePosition(glm::dvec3{0,0.5,0.5});
-    changeDirection(0,-30,0);
+    changePosition(glm::dvec3{0,1,0.5});
+    changeDirection(0,-45,0);
 }
 
 glm::dvec3 RaytracerCamera::renderPixel(int x, int y, const Raytracer& env) const{
@@ -43,6 +43,7 @@ void RaytracerCamera::changeQuality(int newSamples, int newDepth){
 }
 void RaytracerCamera::changePosition(glm::dvec3 newPos){
     cameraPos = newPos;
+    updateCamera();
 }
 void RaytracerCamera::changeDirection(double deltaYaw,double deltaPitch,double deltaRoll){
     glm::dquat qYaw   = glm::angleAxis(glm::radians(deltaYaw),   glm::dvec3(0,1,0));
@@ -83,8 +84,15 @@ void RaytracerCamera::updateCamera(){
     defocusDiskU = cameraRight * defocusRadius;
     defocusDiskV = cameraUp * defocusRadius;
 }
-void RaytracerCamera::changeLens(double newDefocusAngle, double newFocusDist){}
-void RaytracerCamera::changeFov(double newFov){}
+void RaytracerCamera::changeLens(double newDefocusAngle, double newFocusDist){
+    defocusAngle = newDefocusAngle;
+    focusDist = newFocusDist;
+    updateCamera();
+}
+void RaytracerCamera::changeFov(double newFov){
+    vfov = newFov;
+    updateCamera();
+}
 void RaytracerCamera::changeImageSize(int newWidth, int newHeight){
     imageWidth = newWidth;
     imageHeight = newHeight;

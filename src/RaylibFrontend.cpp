@@ -10,6 +10,7 @@ RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight,int renderWidth
     InitWindow(windowWidth,windowHeight,windowTitle.c_str());
     framebuffer.resize(renderWidth * renderHeight);
     textureOnGpu = LoadTextureFromImage(GenImageColor(renderWidth,renderHeight, BLUE));
+    SetTargetFPS(60);
 }
 void RaylibFrontend::start(Raytracer& raytracer){
     if(!IsWindowReady()){
