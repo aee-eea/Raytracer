@@ -24,11 +24,11 @@ bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
         root = (-b + sqrtd) / (2.0 * a);
         if(!rayT.surrounds(root)){ return false; }
     }
-
-    record = {.t = root,
-            .point = ray.at(record.t),
-            .material = matHandle,}
+    
+    record.t = root;
+    record.point = ray.at(record.t);
     glm::dvec3 outwardNormal = (record.point - center) / radius;
     record.setFaceNormal(ray, outwardNormal);
+    record.material = matHandle;
     return true;
 }
