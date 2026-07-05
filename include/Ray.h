@@ -1,6 +1,5 @@
 #pragma once
 #include "glm/glm.hpp"
-#include "IFrontend.h"
 #include "IHit.h"
 #include "Raytracer.h"
 #include <vector>

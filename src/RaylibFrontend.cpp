@@ -4,23 +4,25 @@
 #include "Raytracer.h"
 #include <chrono>
 
-RaylibFrontend::RaylibFrontend(int windowWidth, int windowHeight,int renderWidth, int renderHeight, const std::string& windowTitle)
- : windowWidth{windowWidth},windowHeight{windowHeight},renderWidth{renderWidth},renderHeight{renderHeight},windowTitle{windowTitle}
+RaylibFrontend::RaylibFrontend(Raytracer& raytracer,int windowWidth, int windowHeight, const std::string& windowTitle)
+ : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle},raytracer{raytracer}
 {
     InitWindow(windowWidth,windowHeight,windowTitle.c_str());
-    framebuffer.resize(renderWidth * renderHeight);
-    textureOnGpu = LoadTextureFromImage(GenImageColor(renderWidth,renderHeight, BLUE));
-    SetTargetFPS(60);
+    SetTargetFPS(120);
+
 }
-void RaylibFrontend::start(Raytracer& raytracer){
+void RaylibFrontend::start(){
     if(!IsWindowReady()){
         std::cout << "Error during initialization of window" << std::endl;
     }
 
+    raytracer.launch();
+    textureOnGpu = LoadTextureFromImage(GenImageColor(raytracer.getRenderWidth(),raytracer.getRenderHeight(), BLUE));
+    now = std::chrono::steady_clock::now();
     while(!WindowShouldClose()){
         input();
         update();
-        render(raytracer);
+        render();
     }
 }
 void RaylibFrontend::input(){}
@@ -30,33 +32,26 @@ void RaylibFrontend::update(){
         windowWidth = GetScreenWidth();
     }
 }
-void RaylibFrontend::render(Raytracer& raytracer){
-    std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-    raytracer.render(*this);
-    std::chrono::high_resolution_clock::time_point after = std::chrono::high_resolution_clock::now();
-    std::cout << "frame took " << std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count()) << std::endl;
-    UpdateTexture(textureOnGpu,framebuffer.data());
+void RaylibFrontend::render(){
 
+    UpdateTexture(textureOnGpu,raytracer.getCurrentFrameBuffer().data());
     BeginDrawing();
     ClearBackground(RED);
 
+
     DrawTexturePro(
         textureOnGpu,
-        Rectangle{0,0,static_cast<float>(renderWidth),static_cast<float>(renderHeight)},
+        Rectangle{0,0,static_cast<float>(raytracer.getRenderWidth()),static_cast<float>(raytracer.getRenderHeight())},
         Rectangle{0,0,static_cast<float>(windowWidth),static_cast<float>(windowHeight)},
         Vector2{0,0},
         0.0f,
         WHITE);
     EndDrawing();
-}
 
-void RaylibFrontend::putPixel(int x, int y, PixColor color){
-    framebuffer[x + (y * renderWidth)] = color;
-}
-
-int RaylibFrontend::getImageWidth() const{
-    return renderWidth;
-}
-int RaylibFrontend::getImageHeight() const{
-    return renderHeight;
+    if(raytracer.isFrameDone()){
+        auto end = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - now);
+        std::cout << "Frame took: " << duration << std::endl;
+        CloseWindow();
+    }
 }

@@ -1,56 +1,131 @@
 #include "Raytracer.h"
-#include "IFrontend.h"
 #include "Ray.h"
 #include "Sphere.h"
 #include <limits>
+#include <thread>
 #include "Camera.h"
 #include "PixColor.h"
 #include "Handles.h"
 #include "LambertianMaterial.h"
 #include "MetalMaterial.h"
 #include "DielectricMaterial.h"
+#include <iostream>
+#include <algorithm>
+#include <mutex>
+#include <atomic>
 
 static double linearToGamma(double linear);
 
+Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples)
+    : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{20}{
 
-Raytracer::Raytracer(const IFrontend& frontend)
-    : cam(frontend.getImageWidth(),frontend.getImageHeight()) {
-        MaterialHandle ground = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.8,0.8,0});
-        MaterialHandle center = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.1,0.2,0.5});
+        for (int y = 0; y < renderHeight; y += tileSize) {
+            for (int x = 0; x < renderWidth; x += tileSize) {
+                Tile tile{
+                    .startX = x,
+                    .startY = y,
+                    .width  = std::min(tileSize, renderWidth - x),
+                    .height = std::min(tileSize, renderHeight - y),
+                    .Samples = 0,
+                    .Frame = 0,
+                };
+                tile.colors.resize(tile.width * tile.height, glm::dvec3{0,0,0});
+                tile.isOccupied = std::make_unique<std::atomic<bool>>();
+                tile.isOccupied->store(false,std::memory_order_relaxed);
+                tiles.push_back(std::move(tile));
+            }
+        }
+        progressOfTiles.resize(tiles.size());
+        framebuffer.resize(renderHeight * renderWidth);
+
+        MaterialHandle ground = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.2,0.2,0.2});
+        MaterialHandle red = assets.addMaterial<LambertianMaterial>(glm::dvec3{1,0,0});
+        MaterialHandle green = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,1,0});
+        MaterialHandle blue = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,0,1});
+        MaterialHandle purple = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.5,0,0.5});
+
         MaterialHandle left = assets.addMaterial<DielectricMaterial>(1.50);
         MaterialHandle bubble = assets.addMaterial<DielectricMaterial>(1.00/1.50);
-        MaterialHandle right = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0.8},0.2);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-100.5,-1},100,ground));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-1.2},0.5,center));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1,0,-1},0.5,left));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.0,0,-1.0},0.4,bubble));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.0,0,-1},0.5,right));
+        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0.8},0.2);
+        MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0},0.1);
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,0.5},1,red));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-1},0.8,blue));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,1,-2},1.2,green));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1,0.5,-3},0.5,yellowMetal));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1,0.5,-3},0.5,whiteMetal));
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,2,-4},1.5,blue));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{3,1,-5},1.0,red));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-3,1,-5},1.0,green));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-0.5,-2},0.3,yellowMetal));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,-0.5,-2},0.3,whiteMetal));
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,-0.5,-2},0.3,red));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.5,1.5,-6},1.0,blue));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.5,1.5,-6},1.0,green));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,3,-7},1.8,yellowMetal));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,3,-7},1.8,whiteMetal));
+
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,3,-7},1.8,red));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{4,1,-3},0.7,blue));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-4,1,-3},0.7,green));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-8},2.0,yellowMetal));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,-10},1.5,whiteMetal));
+
 }
 
-void Raytracer::render(IFrontend& frontend){
-    int const imgWidth = frontend.getImageWidth();
-    int const imgHeight = frontend.getImageHeight();
-    static const Interval intensity(0.000,0.999);
-
-    for(int y = 0; y < imgHeight; y++){
-        for(int x = 0; x < imgWidth; x++){
-            glm::dvec3 pixelColor = cam.renderPixel(x,y,*this);
-
-            pixelColor.x = linearToGamma(pixelColor.x);
-            pixelColor.y = linearToGamma(pixelColor.y);
-            pixelColor.z = linearToGamma(pixelColor.z);
-
-            pixelColor.x = intensity.clamp(pixelColor.x);
-            pixelColor.y = intensity.clamp(pixelColor.y);
-            pixelColor.z = intensity.clamp(pixelColor.z);
-            frontend.putPixel(x,y,PixColor{.r = static_cast<uint8_t>(256 * pixelColor.x),
-                                            .g = static_cast<uint8_t>(256 * pixelColor.y),
-                                            .b = static_cast<uint8_t>(256 * pixelColor.z),
-                                            .a = 255});
-        }
+void Raytracer::launch(){
+    int workerCount = std::max(1u, (std::thread::hardware_concurrency()-1));
+    std::cout << std::thread::hardware_concurrency() << std::endl;
+    for(int i = 0; i < workerCount; i++){
+        workers.push_back(std::thread(&Raytracer::renderTileWorker,this));
     }
 }
+
+const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
+    static const Interval intensity(0.000,0.999);
+
+    for(int i = 0; i < tiles.size(); i ++){
+        Tile& tile = tiles[i];
+        Tile snapshot;
+        bool expected = false;
+        if(tile.isOccupied->compare_exchange_weak(expected,true)){
+            if(tile.Samples == 0){ tile.isOccupied->store(false); continue;}
+            snapshot.startX = tile.startX;
+            snapshot.startY = tile.startY;
+            snapshot.width = tile.width;
+            snapshot.height = tile.height;
+            snapshot.Samples = tile.Samples;
+            snapshot.colors = tile.colors;
+            tile.isOccupied->store(false);
+        } else{ continue; }
+
+        for(int y = snapshot.startY; y < snapshot.height + snapshot.startY; y++){
+            for(int x = snapshot.startX; x < snapshot.width + snapshot.startX; x++){
+                int localX = x - snapshot.startX;
+                int localY = y - snapshot.startY;
+                glm::dvec3 pixelColor = snapshot.colors[snapshot.localPosition(localX,localY)];
+                pixelColor = pixelColor / static_cast<double>(snapshot.Samples);
+                pixelColor.x = linearToGamma(pixelColor.x);
+                pixelColor.y = linearToGamma(pixelColor.y);
+                pixelColor.z = linearToGamma(pixelColor.z);
+                pixelColor.x = intensity.clamp(pixelColor.x);
+                pixelColor.y = intensity.clamp(pixelColor.y);
+                pixelColor.z = intensity.clamp(pixelColor.z);
+                putPixelInBuffer(framebuffer,x,y,PixColor{.r = static_cast<uint8_t>(255 * pixelColor.x),
+                                            .g = static_cast<uint8_t>(255 * pixelColor.y),
+                                            .b = static_cast<uint8_t>(255 * pixelColor.z),
+                                            .a = 255});
+            }
+        }
+        progressOfTiles[i] = snapshot.Samples;
+    }
+
+    return framebuffer;
+}
+
 
 
 
@@ -66,4 +141,55 @@ const std::vector<std::unique_ptr<IHit>>& Raytracer::getHittables() const{
 }
 const AssetManager& Raytracer::getAssets() const{
     return assets;
+}
+int Raytracer::getRenderWidth() const{
+    return renderWidth;
+}
+int Raytracer::getRenderHeight() const{
+    return renderHeight;
+}
+void Raytracer::putPixelInBuffer(std::vector<PixColor>& buffer,int x,int y,PixColor color){
+    buffer[x + (y * renderWidth)] = color;
+}
+
+Raytracer::~Raytracer(){
+    isRunning.store(false,std::memory_order_relaxed);
+    for(std::thread& thread : workers){
+        thread.join();
+    }
+    rendererThread.join();
+}
+void Raytracer::renderTileWorker(){
+    while(isRunning.load(std::memory_order_relaxed)){
+        uint64_t tileToRender = nextTile.fetch_add(1,std::memory_order_relaxed);
+
+        Tile& tile = tiles[tileToRender % tiles.size()];
+
+        bool expected = false;
+        if(tile.isOccupied->compare_exchange_weak(expected,true)){
+            if(tile.Samples >= maxSamples){ tile.isOccupied->store(false); continue;}
+        }else{continue;}
+
+        for(int y = tile.startY; y < tile.height + tile.startY; y++){
+            for(int x = tile.startX; x < tile.width + tile.startX; x++){
+                if(!isRunning.load(std::memory_order_relaxed)){goto killThread;}
+                int localX = x - tile.startX;
+                int localY = y - tile.startY;
+                tile.acummulatePixel(localX,localY,cam.generateRayForPixel(x,y).rayColor(*this,Interval{0,infinity},maxDepth));
+            }
+        }
+        tile.Samples++;
+        tile.isOccupied->store(false);
+        
+    }
+    killThread:;
+}
+
+bool Raytracer::isFrameDone() const{
+    int sumOfWork = 0;
+    int expectedWork = maxSamples * tiles.size();
+    for(int i = 0; i < progressOfTiles.size(); i++){
+        sumOfWork += progressOfTiles[i];
+    }
+    return (sumOfWork == expectedWork) ? true : false;
 }

@@ -1,45 +1,17 @@
 #include "Camera.h"
-#include "Ray.h"
 #include "VectorHelpers.h"
 #include "Raytracer.h"
+#include "Ray.h"
 #include <glm/glm.hpp>
 
 
-static glm::dvec3 sampleSquare();
 
 RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight){
     changeImageSize(imageWidth,imageHeight);
     lookAt(glm::dvec3{0,0,-1},glm::dvec3{0,1,0});
-    changePosition(glm::dvec3{0,1,0.5});
-    changeDirection(0,-45,0);
-}
 
-glm::dvec3 RaytracerCamera::renderPixel(int x, int y, const Raytracer& env) const{
-    glm::dvec3 finalColor = {0,0,0};
-    
-    for(int i = 0; i < samplesPerPixel; i++){
-        glm::dvec3 offset = sampleSquare();
-        glm::dvec3 pixelCenter = firstPixelPos + (pixelDeltaU * (static_cast<double>(x) + offset.x)) + (pixelDeltaV * (static_cast<double>(y) + offset.y));
-        glm::dvec3 origin = cameraPos;
-        if(defocusAngle > 0){
-            glm::dvec3 random = randomInUnitDisk();
-            origin = cameraPos + (random.x * defocusDiskU) + (random.y * defocusDiskV);
-        }
-        glm::dvec3 rayDir = pixelCenter - origin;
-
-        Ray ray (origin, glm::normalize(rayDir));
-
-
-        finalColor += ray.rayColor(env,Interval{0.001, infinity},maxDepth);
-    }
-
-    finalColor *= (1.0 / samplesPerPixel);
-    return finalColor;
-}
-
-void RaytracerCamera::changeQuality(int newSamples, int newDepth){
-    samplesPerPixel = newSamples;
-    maxDepth = newDepth;
+    changePosition(glm::dvec3{2.5,3,1.5});
+    changeDirection(20,-30,0);
 }
 void RaytracerCamera::changePosition(glm::dvec3 newPos){
     cameraPos = newPos;
@@ -98,7 +70,15 @@ void RaytracerCamera::changeImageSize(int newWidth, int newHeight){
     imageHeight = newHeight;
     updateCamera();
 }
-
-static glm::dvec3 sampleSquare(){
-    return glm::dvec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+Ray RaytracerCamera::generateRayForPixel(int x, int y){
+    glm::dvec3 offset = sampleSquare();
+    glm::dvec3 pixelCenter = firstPixelPos + (pixelDeltaU * (static_cast<double>(x) + offset.x)) + (pixelDeltaV * (static_cast<double>(y) + offset.y));
+    glm::dvec3 origin = cameraPos;
+    if(defocusAngle > 0){
+        glm::dvec3 random = randomInUnitDisk();
+        origin = cameraPos + (random.x * defocusDiskU) + (random.y * defocusDiskV);
+    }
+    glm::dvec3 rayDir = pixelCenter - origin;
+    Ray ray (origin, glm::normalize(rayDir));
+    return ray;
 }

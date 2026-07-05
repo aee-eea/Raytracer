@@ -50,3 +50,6 @@ inline glm::dvec3 refract(const glm::dvec3 uv, const glm::dvec3 normal, double e
     glm::dvec3 rayOutParallel = -glm::sqrt(std::fabs(1.0 - glm::dot(rayOutPerp,rayOutPerp))) * normal;
     return rayOutPerp + rayOutParallel;
 }
+inline glm::dvec3 sampleSquare(){
+    return glm::dvec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+}
