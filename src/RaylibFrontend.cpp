@@ -55,3 +55,7 @@ void RaylibFrontend::render(){
         CloseWindow();
     }
 }
+
+RaylibFrontend::~RaylibFrontend(){
+    UnloadTexture(textureOnGpu);
+}

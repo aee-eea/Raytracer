@@ -16,26 +16,29 @@
 
 static double linearToGamma(double linear);
 
-Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples)
-    : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{20}{
-
+Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDepth,int threads)
+    : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{maxDepth}, threads{threads}{
         for (int y = 0; y < renderHeight; y += tileSize) {
             for (int x = 0; x < renderWidth; x += tileSize) {
+
                 Tile tile{
                     .startX = x,
                     .startY = y,
                     .width  = std::min(tileSize, renderWidth - x),
                     .height = std::min(tileSize, renderHeight - y),
-                    .Samples = 0,
-                    .Frame = 0,
                 };
+
                 tile.colors.resize(tile.width * tile.height, glm::dvec3{0,0,0});
+
                 tile.isOccupied = std::make_unique<std::atomic<bool>>();
                 tile.isOccupied->store(false,std::memory_order_relaxed);
+
                 tiles.push_back(std::move(tile));
             }
         }
-        progressOfTiles.resize(tiles.size());
+        tileCount = tiles.size();
+
+        progressOfTiles.resize(tileCount);
         framebuffer.resize(renderHeight * renderWidth);
 
         MaterialHandle ground = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.2,0.2,0.2});
@@ -43,10 +46,8 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples)
         MaterialHandle green = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,1,0});
         MaterialHandle blue = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,0,1});
         MaterialHandle purple = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.5,0,0.5});
-
         MaterialHandle left = assets.addMaterial<DielectricMaterial>(1.50);
         MaterialHandle bubble = assets.addMaterial<DielectricMaterial>(1.00/1.50);
-
         MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0.8},0.2);
         MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0},0.1);
 
@@ -77,9 +78,7 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples)
 }
 
 void Raytracer::launch(){
-    int workerCount = std::max(1u, (std::thread::hardware_concurrency()-1));
-    std::cout << std::thread::hardware_concurrency() << std::endl;
-    for(int i = 0; i < workerCount; i++){
+    for(int i = 0; i < threads; i++){
         workers.push_back(std::thread(&Raytracer::renderTileWorker,this));
     }
 }
@@ -87,7 +86,7 @@ void Raytracer::launch(){
 const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
     static const Interval intensity(0.000,0.999);
 
-    for(int i = 0; i < tiles.size(); i ++){
+    for(int i = 0; i < tileCount; i ++){
         Tile& tile = tiles[i];
         Tile snapshot;
         bool expected = false;
@@ -114,7 +113,7 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
                 pixelColor.x = intensity.clamp(pixelColor.x);
                 pixelColor.y = intensity.clamp(pixelColor.y);
                 pixelColor.z = intensity.clamp(pixelColor.z);
-                putPixelInBuffer(framebuffer,x,y,PixColor{.r = static_cast<uint8_t>(255 * pixelColor.x),
+                putPixelInBuffer(x,y,PixColor{.r = static_cast<uint8_t>(255 * pixelColor.x),
                                             .g = static_cast<uint8_t>(255 * pixelColor.y),
                                             .b = static_cast<uint8_t>(255 * pixelColor.z),
                                             .a = 255});
@@ -124,16 +123,6 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
     }
 
     return framebuffer;
-}
-
-
-
-
-static double linearToGamma(double linear){
-    if(linear > 0){
-        return glm::sqrt(linear);
-    }
-    return 0;
 }
 
 const std::vector<std::unique_ptr<IHit>>& Raytracer::getHittables() const{
@@ -148,8 +137,8 @@ int Raytracer::getRenderWidth() const{
 int Raytracer::getRenderHeight() const{
     return renderHeight;
 }
-void Raytracer::putPixelInBuffer(std::vector<PixColor>& buffer,int x,int y,PixColor color){
-    buffer[x + (y * renderWidth)] = color;
+void Raytracer::putPixelInBuffer(int x,int y,PixColor color){
+    framebuffer[x + (y * renderWidth)] = color;
 }
 
 Raytracer::~Raytracer(){
@@ -157,13 +146,13 @@ Raytracer::~Raytracer(){
     for(std::thread& thread : workers){
         thread.join();
     }
-    rendererThread.join();
 }
+
 void Raytracer::renderTileWorker(){
     while(isRunning.load(std::memory_order_relaxed)){
         uint64_t tileToRender = nextTile.fetch_add(1,std::memory_order_relaxed);
 
-        Tile& tile = tiles[tileToRender % tiles.size()];
+        Tile& tile = tiles[tileToRender % tileCount];
 
         bool expected = false;
         if(tile.isOccupied->compare_exchange_weak(expected,true)){
@@ -188,8 +177,15 @@ void Raytracer::renderTileWorker(){
 bool Raytracer::isFrameDone() const{
     int sumOfWork = 0;
     int expectedWork = maxSamples * tiles.size();
-    for(int i = 0; i < progressOfTiles.size(); i++){
+    for(int i = 0; i < tileCount; i++){
         sumOfWork += progressOfTiles[i];
     }
     return (sumOfWork == expectedWork) ? true : false;
+}
+
+static double linearToGamma(double linear){
+    if(linear > 0){
+        return glm::sqrt(linear);
+    }
+    return 0;
 }

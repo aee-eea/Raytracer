@@ -8,6 +8,7 @@
 class RaylibFrontend{
 public:
     RaylibFrontend(Raytracer& raytracer,int windowWidth = 800, int windowHeight = 400, const std::string& windowTitle = "Raylib");
+    ~RaylibFrontend();
     void start();
 
 private:
