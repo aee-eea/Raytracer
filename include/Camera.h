@@ -12,13 +12,17 @@ class RaytracerCamera{
 public:
     RaytracerCamera(int imageWidth, int imageHeight);
 
-    void changePosition(glm::dvec3 newPos);
-    void changeDirection(double deltaYaw,double deltaPitch,double deltaRoll);
+    void addPosition(glm::dvec3 newPos);
+    void addRotation(double deltaYaw,double deltaPitch,double deltaRoll);
     void lookAt(glm::dvec3 newDir,glm::dvec3 up);
     void changeLens(double newDefocusAngle, double newFocusDist);
     void changeFov(double newFov);
     void changeImageSize(int newWidth, int newHeight);
     Ray generateRayForPixel(int x, int y);
+
+    glm::dvec3 getUp() const;
+    glm::dvec3 getRight() const;
+    glm::dvec3 getForward() const;
     
 private:
 

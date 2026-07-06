@@ -10,14 +10,15 @@
 #include <thread>
 #include <vector>
 #include <queue>
+#include <shared_mutex>
 
 struct Tile{
     int startX;
     int startY;
     int width;
     int height;
-    int Samples{0};
-    int Frame{0};
+    int samples{0};
+    int frame{0};
     std::vector<glm::dvec3> colors;
     std::unique_ptr<std::atomic<bool>> isOccupied;
 
@@ -29,29 +30,47 @@ struct Tile{
     }
 };
 
+struct TileProgressRecord{
+    int samplesCollected{0};
+    int frame{0};
+};
+
 class Raytracer{
 public:
     Raytracer(int renderWidth=400, int renderHeight=800, int maxSamples = 10, int maxDepth = 50, int threads = 4);
     ~Raytracer();
+
     void launch();
     bool isFrameDone() const;
+    void invalideRender();
+
     const std::vector<PixColor>& getCurrentFrameBuffer();
     const std::vector<std::unique_ptr<IHit>>& getHittables() const;
+
+    void addPosCamera(glm::dvec3 add);
+    void addRotCamera(double deltaYaw,double deltaPitch,double deltaRoll);
+    glm::dvec3 getCamForwardVec() const;
+    glm::dvec3 getCamUpVec() const;
+    glm::dvec3 getCamRightVec() const;
+
     const AssetManager& getAssets() const;
+
     int getRenderWidth() const;
     int getRenderHeight() const;
 private:
     std::vector<std::unique_ptr<IHit>> hittableObjects;
 
     std::vector<Tile> tiles;
-    std::vector<int> progressOfTiles;
+    std::vector<TileProgressRecord> progressOfTiles;
     std::vector<PixColor> framebuffer;
 
     RaytracerCamera cam;
+    std::shared_mutex camMutex;
+
     AssetManager assets;
     const int renderWidth;
     const int renderHeight;
-    const int tileSize{128};
+    const int tileSize{64};
     const int maxSamples;
     const int maxDepth;
     const int threads;

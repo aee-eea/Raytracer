@@ -10,17 +10,16 @@ RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight){
     changeImageSize(imageWidth,imageHeight);
     lookAt(glm::dvec3{0,0,-1},glm::dvec3{0,1,0});
 
-    changePosition(glm::dvec3{2.5,3,1.5});
-    changeDirection(20,-30,0);
+    addPosition(glm::dvec3{2.5,3,1.5});
 }
-void RaytracerCamera::changePosition(glm::dvec3 newPos){
-    cameraPos = newPos;
+void RaytracerCamera::addPosition(glm::dvec3 newPos){
+    cameraPos += newPos;
     updateCamera();
 }
-void RaytracerCamera::changeDirection(double deltaYaw,double deltaPitch,double deltaRoll){
+void RaytracerCamera::addRotation(double deltaYaw,double deltaPitch,double deltaRoll){
     glm::dquat qYaw   = glm::angleAxis(glm::radians(deltaYaw),   glm::dvec3(0,1,0));
-    glm::dquat qPitch = glm::angleAxis(glm::radians(deltaPitch), glm::dvec3(1,0,0));
-    glm::dquat qRoll  = glm::angleAxis(glm::radians(deltaRoll),  glm::dvec3(0,0,1));
+    glm::dquat qPitch = glm::angleAxis(glm::radians(deltaPitch), cameraRight);
+    glm::dquat qRoll  = glm::angleAxis(glm::radians(deltaRoll),  cameraForward);
 
     glm::dquat delta = qYaw * qPitch * qRoll;
 
@@ -36,9 +35,9 @@ void RaytracerCamera::updateCamera(){
     double h = glm::tan(theta/2);
     viewportHeight = 2 * h * focusDist;
     viewportWidth = viewportHeight * (static_cast<double>(imageWidth) / imageHeight);
-    cameraForward = orientation * glm::dvec3(0,0,-1);
-    cameraRight = orientation * glm::dvec3(1,0,0);
-    cameraUp = orientation * glm::dvec3(0,1,0);
+    cameraForward = glm::normalize(orientation * glm::dvec3(0,0,-1));
+    cameraRight = glm::normalize(orientation * glm::dvec3(1,0,0));
+    cameraUp = glm::normalize(orientation * glm::dvec3(0,1,0));
 
     viewportU = viewportWidth * cameraRight;
     viewportV = viewportHeight * -cameraUp;
@@ -81,4 +80,14 @@ Ray RaytracerCamera::generateRayForPixel(int x, int y){
     glm::dvec3 rayDir = pixelCenter - origin;
     Ray ray (origin, glm::normalize(rayDir));
     return ray;
+}
+
+glm::dvec3 RaytracerCamera::getUp() const{
+    return cameraUp;
+}
+glm::dvec3 RaytracerCamera::getRight() const{
+    return cameraRight;
+}
+glm::dvec3 RaytracerCamera::getForward() const{
+    return cameraForward;
 }

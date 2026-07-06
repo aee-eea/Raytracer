@@ -18,6 +18,9 @@ private:
     Raytracer& raytracer;
     Texture2D textureOnGpu;
     std::chrono::time_point<std::chrono::steady_clock> now;
+    double cameraMovSpeed{10.0};
+    double cameraRotSpeed{20.0};
+    bool notifyAboutFrameCompletion{true};
 
     void input();
     void update();

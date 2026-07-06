@@ -91,22 +91,32 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
         Tile snapshot;
         bool expected = false;
         if(tile.isOccupied->compare_exchange_weak(expected,true)){
-            if(tile.Samples == 0){ tile.isOccupied->store(false); continue;}
+            if(tile.samples == 0){ tile.isOccupied->store(false); continue;}
             snapshot.startX = tile.startX;
             snapshot.startY = tile.startY;
             snapshot.width = tile.width;
             snapshot.height = tile.height;
-            snapshot.Samples = tile.Samples;
+            snapshot.samples = tile.samples;
             snapshot.colors = tile.colors;
+            snapshot.frame = tile.frame;
             tile.isOccupied->store(false);
         } else{ continue; }
+
+        if(snapshot.frame == curFrame.load()){
+            progressOfTiles[i].samplesCollected = snapshot.samples;
+            progressOfTiles[i].frame = snapshot.frame;
+        }else{
+            progressOfTiles[i].samplesCollected = 0;
+            progressOfTiles[i].frame = curFrame.load(std::memory_order_relaxed);
+            continue;
+        }
 
         for(int y = snapshot.startY; y < snapshot.height + snapshot.startY; y++){
             for(int x = snapshot.startX; x < snapshot.width + snapshot.startX; x++){
                 int localX = x - snapshot.startX;
                 int localY = y - snapshot.startY;
                 glm::dvec3 pixelColor = snapshot.colors[snapshot.localPosition(localX,localY)];
-                pixelColor = pixelColor / static_cast<double>(snapshot.Samples);
+                pixelColor = pixelColor / static_cast<double>(snapshot.samples);
                 pixelColor.x = linearToGamma(pixelColor.x);
                 pixelColor.y = linearToGamma(pixelColor.y);
                 pixelColor.z = linearToGamma(pixelColor.z);
@@ -118,8 +128,8 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
                                             .b = static_cast<uint8_t>(255 * pixelColor.z),
                                             .a = 255});
             }
+
         }
-        progressOfTiles[i] = snapshot.Samples;
     }
 
     return framebuffer;
@@ -156,18 +166,32 @@ void Raytracer::renderTileWorker(){
 
         bool expected = false;
         if(tile.isOccupied->compare_exchange_weak(expected,true)){
-            if(tile.Samples >= maxSamples){ tile.isOccupied->store(false); continue;}
+            if(tile.samples >= maxSamples && curFrame.load(std::memory_order_acquire) == tile.frame){ tile.isOccupied->store(false); continue;}
         }else{continue;}
 
+        
         for(int y = tile.startY; y < tile.height + tile.startY; y++){
             for(int x = tile.startX; x < tile.width + tile.startX; x++){
-                if(!isRunning.load(std::memory_order_relaxed)){goto killThread;}
+                if(tile.frame < curFrame.load(std::memory_order_acquire)){goto restartTile;}
+                if(!isRunning.load(std::memory_order_acquire)){goto killThread;}
                 int localX = x - tile.startX;
                 int localY = y - tile.startY;
-                tile.acummulatePixel(localX,localY,cam.generateRayForPixel(x,y).rayColor(*this,Interval{0,infinity},maxDepth));
+                camMutex.lock_shared();
+                Ray rayToFollow = cam.generateRayForPixel(x,y);
+                camMutex.unlock_shared();
+
+                tile.acummulatePixel(localX,localY,rayToFollow.rayColor(*this,Interval{0,infinity},maxDepth));
             }
         }
-        tile.Samples++;
+        tile.samples++;
+
+        if(tile.frame < curFrame.load(std::memory_order_acquire)){
+            restartTile:
+            tile.samples = 0;
+            std::fill(tile.colors.begin(),tile.colors.end(),glm::dvec3(0,0,0));
+            tile.frame = curFrame.load(std::memory_order_relaxed);
+        }
+
         tile.isOccupied->store(false);
         
     }
@@ -176,11 +200,35 @@ void Raytracer::renderTileWorker(){
 
 bool Raytracer::isFrameDone() const{
     int sumOfWork = 0;
-    int expectedWork = maxSamples * tiles.size();
+    int expectedWork = maxSamples * tileCount;
     for(int i = 0; i < tileCount; i++){
-        sumOfWork += progressOfTiles[i];
+        if(progressOfTiles[i].frame == curFrame.load(std::memory_order_acquire)){
+            sumOfWork += progressOfTiles[i].samplesCollected;
+        }
     }
     return (sumOfWork == expectedWork) ? true : false;
+}
+void Raytracer::invalideRender(){
+    curFrame.fetch_add(1,std::memory_order_release);
+}
+void Raytracer::addPosCamera(glm::dvec3 add){
+    camMutex.lock();
+    cam.addPosition(add);
+    camMutex.unlock();
+}
+void Raytracer::addRotCamera(double deltaYaw,double deltaPitch,double deltaRoll){
+    camMutex.lock();
+    cam.addRotation(deltaYaw,deltaPitch,deltaRoll);
+    camMutex.unlock();
+}
+glm::dvec3 Raytracer::getCamForwardVec() const{
+    return cam.getForward();
+}
+glm::dvec3 Raytracer::getCamUpVec() const{
+    return cam.getUp();
+}
+glm::dvec3 Raytracer::getCamRightVec() const{
+    return cam.getRight();
 }
 
 static double linearToGamma(double linear){
