@@ -18,25 +18,23 @@ static double linearToGamma(double linear);
 
 Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDepth,int threads)
     : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{maxDepth}, threads{threads}{
-        for (int y = 0; y < renderHeight; y += tileSize) {
-            for (int x = 0; x < renderWidth; x += tileSize) {
 
-                Tile tile{
-                    .startX = x,
-                    .startY = y,
-                    .width  = std::min(tileSize, renderWidth - x),
-                    .height = std::min(tileSize, renderHeight - y),
-                };
+        int tilesX = (renderWidth  + tileSize - 1) / tileSize;   // ceil division
+        int tilesY = (renderHeight + tileSize - 1) / tileSize;
+        tileCount = tilesX * tilesY;
+        tiles = std::make_unique<Tile[]>(tileCount);
 
-                tile.colors.resize(tile.width * tile.height, glm::dvec3{0,0,0});
+        for (int y = 0; y < tilesY; ++y) {
+            for (int x = 0; x < tilesX; ++x) {
+                size_t i = y * tilesX + x;
 
-                tile.isOccupied = std::make_unique<std::atomic<bool>>();
-                tile.isOccupied->store(false,std::memory_order_relaxed);
-
-                tiles.push_back(std::move(tile));
+                tiles[i].startX = x * tileSize;
+                tiles[i].startY = y * tileSize;
+                tiles[i].width  = std::min(tileSize, renderWidth  - tiles[i].startX);
+                tiles[i].height = std::min(tileSize, renderHeight - tiles[i].startY);
+                tiles[i].colors.resize(tiles[i].width * tiles[i].height);
             }
         }
-        tileCount = tiles.size();
 
         progressOfTiles.resize(tileCount);
         framebuffer.resize(renderHeight * renderWidth);
@@ -90,8 +88,8 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
         Tile& tile = tiles[i];
         Tile snapshot;
         bool expected = false;
-        if(tile.isOccupied->compare_exchange_weak(expected,true)){
-            if(tile.samples == 0){ tile.isOccupied->store(false); continue;}
+        if(tile.isOccupied.compare_exchange_weak(expected,true)){
+            if(tile.samples == 0){ tile.isOccupied.store(false,std::memory_order_release); continue;}
             snapshot.startX = tile.startX;
             snapshot.startY = tile.startY;
             snapshot.width = tile.width;
@@ -99,7 +97,7 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
             snapshot.samples = tile.samples;
             snapshot.colors = tile.colors;
             snapshot.frame = tile.frame;
-            tile.isOccupied->store(false);
+            tile.isOccupied.store(false,std::memory_order_release);
         } else{ continue; }
 
         if(snapshot.frame == curFrame.load()){
@@ -165,15 +163,16 @@ void Raytracer::renderTileWorker(){
         Tile& tile = tiles[tileToRender % tileCount];
 
         bool expected = false;
-        if(tile.isOccupied->compare_exchange_weak(expected,true)){
-            if(tile.samples >= maxSamples && curFrame.load(std::memory_order_acquire) == tile.frame){ tile.isOccupied->store(false); continue;}
+        if(tile.isOccupied.compare_exchange_strong(expected,true)){
+            if(tile.samples >= maxSamples && curFrame.load(std::memory_order_relaxed) == tile.frame){
+            tile.isOccupied.store(false,std::memory_order_release); continue;}
         }else{continue;}
 
         
         for(int y = tile.startY; y < tile.height + tile.startY; y++){
             for(int x = tile.startX; x < tile.width + tile.startX; x++){
-                if(tile.frame < curFrame.load(std::memory_order_acquire)){goto restartTile;}
-                if(!isRunning.load(std::memory_order_acquire)){goto killThread;}
+                if(tile.frame < curFrame.load(std::memory_order_relaxed)){goto restartTile;}
+                if(!isRunning.load(std::memory_order_relaxed)){tile.isOccupied.store(false,std::memory_order_release); goto killThread;}
                 int localX = x - tile.startX;
                 int localY = y - tile.startY;
                 camMutex.lock_shared();
@@ -185,14 +184,14 @@ void Raytracer::renderTileWorker(){
         }
         tile.samples++;
 
-        if(tile.frame < curFrame.load(std::memory_order_acquire)){
+        if(tile.frame < curFrame.load(std::memory_order_relaxed)){
             restartTile:
             tile.samples = 0;
             std::fill(tile.colors.begin(),tile.colors.end(),glm::dvec3(0,0,0));
             tile.frame = curFrame.load(std::memory_order_relaxed);
         }
 
-        tile.isOccupied->store(false);
+        tile.isOccupied.store(false,std::memory_order_release);
         
     }
     killThread:;
@@ -202,7 +201,7 @@ bool Raytracer::isFrameDone() const{
     int sumOfWork = 0;
     int expectedWork = maxSamples * tileCount;
     for(int i = 0; i < tileCount; i++){
-        if(progressOfTiles[i].frame == curFrame.load(std::memory_order_acquire)){
+        if(progressOfTiles[i].frame == curFrame.load(std::memory_order_relaxed)){
             sumOfWork += progressOfTiles[i].samplesCollected;
         }
     }

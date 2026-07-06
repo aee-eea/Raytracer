@@ -20,7 +20,7 @@ struct Tile{
     int samples{0};
     int frame{0};
     std::vector<glm::dvec3> colors;
-    std::unique_ptr<std::atomic<bool>> isOccupied;
+    std::atomic<bool> isOccupied{false};
 
     int localPosition(int x, int y) const{
         return x + (y * width);
@@ -60,7 +60,7 @@ public:
 private:
     std::vector<std::unique_ptr<IHit>> hittableObjects;
 
-    std::vector<Tile> tiles;
+    std::unique_ptr<Tile[]> tiles; //tiles are non movable so it cant be a vector
     std::vector<TileProgressRecord> progressOfTiles;
     std::vector<PixColor> framebuffer;
 
