@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <glm/glm.hpp>
 
+namespace rt{
 inline double randomDouble() {
     return std::rand() / (RAND_MAX + 1.0);
 }
@@ -52,4 +53,5 @@ inline glm::dvec3 refract(const glm::dvec3 uv, const glm::dvec3 normal, double e
 }
 inline glm::dvec3 sampleSquare(){
     return glm::dvec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+}
 }

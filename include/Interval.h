@@ -3,6 +3,7 @@
 
 constexpr double infinity = std::numeric_limits<double>::infinity();
 
+namespace rt{
 struct Interval{
     double min {infinity};
     double max {-infinity}; //interval is empty by default
@@ -26,3 +27,4 @@ struct Interval{
     static const Interval empty;
     static const Interval universe;
 };
+}

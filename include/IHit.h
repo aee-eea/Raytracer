@@ -3,7 +3,10 @@
 #include <Interval.h>
 #include "Handles.h"
 
-class Ray; //circular dependency fix
+namespace rt{
+class Ray;
+class HitRecord;
+
 
 struct HitRecord{
     glm::dvec3 point;
@@ -11,6 +14,8 @@ struct HitRecord{
     double t;
     bool front_face;
     MaterialHandle material;
+    double u;
+    double v;
 
     void setFaceNormal(const Ray& ray, const glm::dvec3 outwardNormal);
 };
@@ -20,3 +25,4 @@ public:
     virtual ~IHit() = default;
     virtual bool hit(const Ray& ray, Interval rayT, HitRecord& record) const = 0;
 };
+}

@@ -5,9 +5,9 @@
 #include "IHit.h"
 #include "VectorHelpers.h"
 #include <glm/gtc/quaternion.hpp>
+#include "Ray.h"
 
-class Raytracer;// circular dependency
-
+namespace rt{
 class RaytracerCamera{
 public:
     RaytracerCamera(int imageWidth, int imageHeight);
@@ -49,3 +49,4 @@ private:
     glm::dvec3 cameraForward,cameraRight,cameraUp;
     void updateCamera();
 };
+}

@@ -1,7 +1,13 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "IHit.h"
-#include "AssetManager.h"
+#include "Interval.h"
+#include "Handles.h"
+
+namespace rt{
+
+class Ray;
+class HitRecord;
 
 class Sphere : public IHit{
 public:
@@ -13,3 +19,4 @@ private:
     double radius;
     MaterialHandle matHandle;
 };
+}

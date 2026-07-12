@@ -3,6 +3,8 @@
 #include "Ray.h"
 #include "IMaterial.h"
 
+using namespace rt;
+
 Sphere::Sphere(const glm::dvec3& center, double radius, MaterialHandle materialHandle)
  :  center{center},radius{std::fmax(0,radius)}, matHandle{materialHandle}{}
 

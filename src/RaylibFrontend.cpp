@@ -17,7 +17,7 @@ void RaylibFrontend::start(){
     }
 
     raytracer.launch();
-    textureOnGpu = LoadTextureFromImage(GenImageColor(raytracer.getRenderWidth(),raytracer.getRenderHeight(), BLUE));
+    textureOnGpu = LoadTextureFromImage(GenImageColor(raytracer.getRenderWidth(),raytracer.getRenderHeight(), ::BLUE));
     now = std::chrono::steady_clock::now();
     while(!WindowShouldClose()){
         input();
@@ -57,7 +57,7 @@ void RaylibFrontend::render(){
 
     UpdateTexture(textureOnGpu,raytracer.getCurrentFrameBuffer().data());
     BeginDrawing();
-    ClearBackground(RED);
+    ClearBackground(::RED);
 
 
     DrawTexturePro(
@@ -66,7 +66,7 @@ void RaylibFrontend::render(){
         Rectangle{0,0,static_cast<float>(windowWidth),static_cast<float>(windowHeight)},
         Vector2{0,0},
         0.0f,
-        WHITE);
+        ::WHITE);
     EndDrawing();
 
     if(raytracer.isFrameDone() && notifyAboutFrameCompletion){

@@ -12,6 +12,7 @@
 #include <queue>
 #include <shared_mutex>
 
+namespace rt{
 struct Tile{
     int startX;
     int startY;
@@ -44,7 +45,7 @@ public:
     bool isFrameDone() const;
     void invalideRender();
 
-    const std::vector<PixColor>& getCurrentFrameBuffer();
+    const std::vector<Color>& getCurrentFrameBuffer();
     const std::vector<std::unique_ptr<IHit>>& getHittables() const;
 
     void addPosCamera(glm::dvec3 add);
@@ -62,7 +63,7 @@ private:
 
     std::unique_ptr<Tile[]> tiles; //tiles are non movable so it cant be a vector
     std::vector<TileProgressRecord> progressOfTiles;
-    std::vector<PixColor> framebuffer;
+    std::vector<Color> framebuffer;
 
     RaytracerCamera cam;
     std::shared_mutex camMutex;
@@ -81,6 +82,7 @@ private:
     std::atomic<uint64_t> nextTile{0};
     std::atomic<uint64_t> curFrame{0};
 
-    void putPixelInBuffer(int x,int y,PixColor color);
+    void putPixelInBuffer(int x,int y,Color color);
     void renderTileWorker();
 };
+}

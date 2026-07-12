@@ -1,13 +1,17 @@
 #include "DielectricMaterial.h"
 #include "Ray.h"
 #include "VectorHelpers.h"
+#include "IHit.h"
+#include "Raytracer.h"
 #include <glm/glm.hpp>
+
+using namespace rt;
 
 static double reflectance(double cosine, double refractionIndex);
 
 DielectricMaterial::DielectricMaterial(double refractionIndex) : refractionIndex{refractionIndex}{}
 
-bool DielectricMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered){
+bool DielectricMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered,const Raytracer& env){
     attenuation = glm::dvec3{1.0,1.0,1.0};
     double ri = rec.front_face ? (1.0/refractionIndex) : refractionIndex;
 

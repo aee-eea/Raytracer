@@ -1,9 +1,12 @@
 #pragma once
 #include "raylib.h"
-#include "Raytracer.h"
 #include <string>
 #include <vector>
 #include <chrono>
+
+namespace rt{
+
+class Raytracer;
 
 class RaylibFrontend{
 public:
@@ -26,3 +29,4 @@ private:
     void update();
     void render();
 };
+}

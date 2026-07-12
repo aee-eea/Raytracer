@@ -10,7 +10,7 @@
 #include <iostream>
 #include <memory>
 
-Ray::Ray(const glm::dvec3& origin, const glm::dvec3& direction): orig{origin},dir{direction}{}
+Ray::Ray(glm::dvec3 origin, glm::dvec3 direction): orig{origin},dir{direction}{}
 
 glm::dvec3 Ray::at(double t) const {
     return orig + dir * t;
@@ -36,7 +36,7 @@ glm::dvec3 Ray::rayColor(const Raytracer& env,Interval rayT, int depth) const{
     if(hitted){
         Ray scattered(glm::dvec3{0,0,0},glm::dvec3{0,0,0});
         glm::dvec3 attentuation{0,0,0};
-        if(env.getAssets().getMaterial(rec.material).scatter(*this,rec,attentuation,scattered)){
+        if(env.getAssets().getMaterial(rec.material).scatter(*this,rec,attentuation,scattered,env)){
             Ray nextRay(scattered.orig, scattered.dir);
             return attentuation * nextRay.rayColor(env,Interval{0.001,infinity},depth - 1);
         }

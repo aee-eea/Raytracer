@@ -9,10 +9,13 @@
 #include "LambertianMaterial.h"
 #include "MetalMaterial.h"
 #include "DielectricMaterial.h"
+#include "SolidTexture.h"
 #include <iostream>
 #include <algorithm>
 #include <mutex>
 #include <atomic>
+
+using namespace rt;
 
 static double linearToGamma(double linear);
 
@@ -39,15 +42,17 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
         progressOfTiles.resize(tileCount);
         framebuffer.resize(renderHeight * renderWidth);
 
-        MaterialHandle ground = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.2,0.2,0.2});
-        MaterialHandle red = assets.addMaterial<LambertianMaterial>(glm::dvec3{1,0,0});
-        MaterialHandle green = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,1,0});
-        MaterialHandle blue = assets.addMaterial<LambertianMaterial>(glm::dvec3{0,0,1});
-        MaterialHandle purple = assets.addMaterial<LambertianMaterial>(glm::dvec3{0.5,0,0.5});
-        MaterialHandle left = assets.addMaterial<DielectricMaterial>(1.50);
-        MaterialHandle bubble = assets.addMaterial<DielectricMaterial>(1.00/1.50);
-        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0.8},0.2);
-        MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(glm::dvec3{0.8,0.8,0},0.1);
+        TextureHandle redColor = assets.addTexture<SolidTexture>(glm::dvec3{1,0,0});
+        TextureHandle greenColor = assets.addTexture<SolidTexture>(glm::dvec3{0,1,0});
+        TextureHandle blueColor = assets.addTexture<SolidTexture>(glm::dvec3{0,0,1});
+        TextureHandle grayColor = assets.addTexture<SolidTexture>(glm::dvec3{0.7,0.7,0.7});
+        TextureHandle goldenColor = assets.addTexture<SolidTexture>(glm::dvec3{0.8,0.8,0});
+
+        MaterialHandle red = assets.addMaterial<LambertianMaterial>(redColor);
+        MaterialHandle green = assets.addMaterial<LambertianMaterial>(greenColor);
+        MaterialHandle blue = assets.addMaterial<LambertianMaterial>(blueColor);
+        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(grayColor,0.2);
+        MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(goldenColor,0.1);
 
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,0.5},1,red));
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-1},0.8,blue));
@@ -81,15 +86,17 @@ void Raytracer::launch(){
     }
 }
 
-const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
+const std::vector<Color>& Raytracer::getCurrentFrameBuffer(){
     static const Interval intensity(0.000,0.999);
 
     for(int i = 0; i < tileCount; i ++){
         Tile& tile = tiles[i];
         Tile snapshot;
+        uint64_t thisFrame = curFrame.load(std::memory_order_acquire);
         bool expected = false;
         if(tile.isOccupied.compare_exchange_weak(expected,true)){
-            if(tile.samples == 0){ tile.isOccupied.store(false,std::memory_order_release); continue;}
+            if(tile.samples == 0){ tile.isOccupied.store(false,std::memory_order_relaxed); continue;}
+
             snapshot.startX = tile.startX;
             snapshot.startY = tile.startY;
             snapshot.width = tile.width;
@@ -100,12 +107,12 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
             tile.isOccupied.store(false,std::memory_order_release);
         } else{ continue; }
 
-        if(snapshot.frame == curFrame.load()){
+        if(snapshot.frame == thisFrame){
             progressOfTiles[i].samplesCollected = snapshot.samples;
             progressOfTiles[i].frame = snapshot.frame;
         }else{
             progressOfTiles[i].samplesCollected = 0;
-            progressOfTiles[i].frame = curFrame.load(std::memory_order_relaxed);
+            progressOfTiles[i].frame = thisFrame;
             continue;
         }
 
@@ -121,7 +128,7 @@ const std::vector<PixColor>& Raytracer::getCurrentFrameBuffer(){
                 pixelColor.x = intensity.clamp(pixelColor.x);
                 pixelColor.y = intensity.clamp(pixelColor.y);
                 pixelColor.z = intensity.clamp(pixelColor.z);
-                putPixelInBuffer(x,y,PixColor{.r = static_cast<uint8_t>(255 * pixelColor.x),
+                putPixelInBuffer(x,y,Color{.r = static_cast<uint8_t>(255 * pixelColor.x),
                                             .g = static_cast<uint8_t>(255 * pixelColor.y),
                                             .b = static_cast<uint8_t>(255 * pixelColor.z),
                                             .a = 255});
@@ -145,7 +152,7 @@ int Raytracer::getRenderWidth() const{
 int Raytracer::getRenderHeight() const{
     return renderHeight;
 }
-void Raytracer::putPixelInBuffer(int x,int y,PixColor color){
+void Raytracer::putPixelInBuffer(int x,int y,Color color){
     framebuffer[x + (y * renderWidth)] = color;
 }
 
@@ -165,7 +172,7 @@ void Raytracer::renderTileWorker(){
         bool expected = false;
         if(tile.isOccupied.compare_exchange_strong(expected,true)){
             if(tile.samples >= maxSamples && curFrame.load(std::memory_order_relaxed) == tile.frame){
-            tile.isOccupied.store(false,std::memory_order_release); continue;}
+            tile.isOccupied.store(false,std::memory_order_relaxed); continue;}
         }else{continue;}
 
         
@@ -200,8 +207,9 @@ void Raytracer::renderTileWorker(){
 bool Raytracer::isFrameDone() const{
     int sumOfWork = 0;
     int expectedWork = maxSamples * tileCount;
+    uint64_t forFrame = curFrame.load(std::memory_order_relaxed);
     for(int i = 0; i < tileCount; i++){
-        if(progressOfTiles[i].frame == curFrame.load(std::memory_order_relaxed)){
+        if(progressOfTiles[i].frame == forFrame){
             sumOfWork += progressOfTiles[i].samplesCollected;
         }
     }
@@ -210,6 +218,7 @@ bool Raytracer::isFrameDone() const{
 void Raytracer::invalideRender(){
     curFrame.fetch_add(1,std::memory_order_release);
 }
+
 void Raytracer::addPosCamera(glm::dvec3 add){
     camMutex.lock();
     cam.addPosition(add);
