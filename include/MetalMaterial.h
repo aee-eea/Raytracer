@@ -11,7 +11,7 @@ class Raytracer;
 class MetalMaterial : public IMaterial{
 public:
     MetalMaterial(TextureHandle albedo, double fuzz);
-    bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) override;
+    bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) const override;
 
 private:
     TextureHandle albedo;

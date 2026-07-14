@@ -2,6 +2,8 @@
 #include "IHit.h"
 #include "Ray.h"
 #include "IMaterial.h"
+#include <glm/trigonometric.hpp>
+#include <glm/gtc/constants.hpp>
 
 using namespace rt;
 
@@ -32,5 +34,12 @@ bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     glm::dvec3 outwardNormal = (record.point - center) / radius;
     record.setFaceNormal(ray, outwardNormal);
     record.material = matHandle;
+
+
+    double theta = glm::acos(outwardNormal.y);
+    double phi = glm::atan(-outwardNormal.z,outwardNormal.x) + glm::pi<double>();
+
+    record.u = phi / (2 * glm::pi<double>());
+    record.v = theta / glm::pi<double>();
     return true;
 }

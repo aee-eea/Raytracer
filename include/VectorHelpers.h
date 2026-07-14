@@ -54,4 +54,15 @@ inline glm::dvec3 refract(const glm::dvec3 uv, const glm::dvec3 normal, double e
 inline glm::dvec3 sampleSquare(){
     return glm::dvec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
 }
+
+inline uint8_t toByte(float value) {
+    if (value <= 0.0){ return 0; }
+    if( value >= 1.0){ return 255; }
+    return static_cast<uint8_t>(256.0 * value);
+}
+inline uint8_t toByte(double value) {
+    if (value <= 0.0){ return 0; }
+    if( value >= 1.0){ return 255; }
+    return static_cast<uint8_t>(256.0 * value);
+}
 }

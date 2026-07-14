@@ -10,6 +10,8 @@
 #include "MetalMaterial.h"
 #include "DielectricMaterial.h"
 #include "SolidTexture.h"
+#include "CheckeredTexture.h"
+#include "ImageTexture.h"
 #include <iostream>
 #include <algorithm>
 #include <mutex>
@@ -42,17 +44,26 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
         progressOfTiles.resize(tileCount);
         framebuffer.resize(renderHeight * renderWidth);
 
+        ImageHandle earth = assets.addImage("resources/earthmap.jpg");
+
         TextureHandle redColor = assets.addTexture<SolidTexture>(glm::dvec3{1,0,0});
         TextureHandle greenColor = assets.addTexture<SolidTexture>(glm::dvec3{0,1,0});
         TextureHandle blueColor = assets.addTexture<SolidTexture>(glm::dvec3{0,0,1});
         TextureHandle grayColor = assets.addTexture<SolidTexture>(glm::dvec3{0.7,0.7,0.7});
         TextureHandle goldenColor = assets.addTexture<SolidTexture>(glm::dvec3{0.8,0.8,0});
 
+        TextureHandle checkered = assets.addTexture<CheckeredTexture>(0.5,redColor,blueColor);
+        TextureHandle earthTex = assets.addTexture<ImageTexture>(earth);
+
         MaterialHandle red = assets.addMaterial<LambertianMaterial>(redColor);
         MaterialHandle green = assets.addMaterial<LambertianMaterial>(greenColor);
         MaterialHandle blue = assets.addMaterial<LambertianMaterial>(blueColor);
         MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(grayColor,0.2);
         MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(goldenColor,0.1);
+
+        MaterialHandle checkeredMat = assets.addMaterial<LambertianMaterial>(checkered);
+
+        MaterialHandle earthMat = assets.addMaterial<LambertianMaterial>(earthTex);
 
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,0.5},1,red));
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-1},0.8,blue));
@@ -77,6 +88,9 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-4,1,-3},0.7,green));
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-8},2.0,yellowMetal));
         hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,-10},1.5,whiteMetal));
+        
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,5,1},2,checkeredMat));
+        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,3,0},0.3,earthMat));
 
 }
 
@@ -128,9 +142,9 @@ const std::vector<Color>& Raytracer::getCurrentFrameBuffer(){
                 pixelColor.x = intensity.clamp(pixelColor.x);
                 pixelColor.y = intensity.clamp(pixelColor.y);
                 pixelColor.z = intensity.clamp(pixelColor.z);
-                putPixelInBuffer(x,y,Color{.r = static_cast<uint8_t>(255 * pixelColor.x),
-                                            .g = static_cast<uint8_t>(255 * pixelColor.y),
-                                            .b = static_cast<uint8_t>(255 * pixelColor.z),
+                putPixelInBuffer(x,y,Color{.r = toByte(pixelColor.x),
+                                            .g = toByte(pixelColor.y),
+                                            .b = toByte(pixelColor.z),
                                             .a = 255});
             }
 

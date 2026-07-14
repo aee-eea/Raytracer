@@ -4,6 +4,8 @@
 #include <vector>
 #include "Handles.h"
 #include <unordered_map>
+#include <string>
+#include "Image.h"
 
 namespace rt{
 class IMaterial;
@@ -17,13 +19,17 @@ public:
     template<typename T, typename... Args>
     MaterialHandle addMaterial(Args&&... args);
 
-    IMaterial& getMaterial(MaterialHandle handle) const;
+    const IMaterial& getMaterial(MaterialHandle handle) const;
 
 
     template<typename T, typename... Args>
     TextureHandle addTexture(Args&&... args);
 
-    ITexture& getTexture(TextureHandle handle) const;
+    const ITexture& getTexture(TextureHandle handle) const;
+
+
+    ImageHandle addImage(const std::string& filePath);
+    const Image& getImage(ImageHandle handle) const;
 
 
 private:
@@ -31,6 +37,8 @@ private:
     std::unordered_map<MaterialHandle, std::unique_ptr<IMaterial>> materialStore;
     TextureHandle nextTex{1};
     std::unordered_map<TextureHandle, std::unique_ptr<ITexture>> textureStore;
+    ImageHandle nextImg{1};
+    std::unordered_map<ImageHandle, Image> imageStore;
 };
 }
 

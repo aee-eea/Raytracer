@@ -10,6 +10,6 @@ class IMaterial {
     public:
     virtual ~IMaterial() = default;
 
-    virtual bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) = 0;
+    virtual bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) const = 0;
 };
 }

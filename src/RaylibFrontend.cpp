@@ -8,6 +8,7 @@ RaylibFrontend::RaylibFrontend(Raytracer& raytracer,int windowWidth, int windowH
  : windowWidth{windowWidth},windowHeight{windowHeight},windowTitle{windowTitle},raytracer{raytracer}
 {
     InitWindow(windowWidth,windowHeight,windowTitle.c_str());
+    SetTraceLogLevel(TraceLogLevel::LOG_NONE);
     SetTargetFPS(120);
 
 }

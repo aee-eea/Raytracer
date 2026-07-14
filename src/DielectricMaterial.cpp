@@ -11,7 +11,7 @@ static double reflectance(double cosine, double refractionIndex);
 
 DielectricMaterial::DielectricMaterial(double refractionIndex) : refractionIndex{refractionIndex}{}
 
-bool DielectricMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered,const Raytracer& env){
+bool DielectricMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered,const Raytracer& env) const{
     attenuation = glm::dvec3{1.0,1.0,1.0};
     double ri = rec.front_face ? (1.0/refractionIndex) : refractionIndex;
 

@@ -11,7 +11,7 @@ class Raytracer;
 class LambertianMaterial : public IMaterial{
 public:
     LambertianMaterial(TextureHandle albedo);
-    bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) override;
+    bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) const override;
 
 private:
     TextureHandle albedo;
