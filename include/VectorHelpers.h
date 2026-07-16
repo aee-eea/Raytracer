@@ -3,8 +3,15 @@
 #include <glm/glm.hpp>
 
 namespace rt{
-inline double randomDouble() {
-    return std::rand() / (RAND_MAX + 1.0);
+
+inline double randomDouble(){
+    static uint64_t state = 67172645466775252ull;
+
+    state ^= state << 13;
+    state ^= state >> 7;
+    state ^= state << 17;
+
+    return (state >> 11) * (1.0 / 9007199254740992.0);
 }
 inline double randomDouble(double min, double max){
     return min + (max-min) * randomDouble();
@@ -64,5 +71,9 @@ inline uint8_t toByte(double value) {
     if (value <= 0.0){ return 0; }
     if( value >= 1.0){ return 255; }
     return static_cast<uint8_t>(256.0 * value);
+}
+
+inline int randomInt(int min, int max) {
+    return int(randomDouble(min, max+1));
 }
 }

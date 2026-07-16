@@ -6,6 +6,7 @@
 namespace rt{
 class Ray;
 class HitRecord;
+class AABB;
 
 
 struct HitRecord{
@@ -24,5 +25,6 @@ class IHit{
 public:
     virtual ~IHit() = default;
     virtual bool hit(const Ray& ray, Interval rayT, HitRecord& record) const = 0;
+    virtual AABB boundingBox() const = 0;
 };
 }

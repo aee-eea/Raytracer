@@ -8,7 +8,12 @@ struct Interval{
     double min {infinity};
     double max {-infinity}; //interval is empty by default
 
+    Interval() = default;
     Interval(double min, double max) : min{min},max{max}{}
+    Interval(Interval a,Interval b){
+        min = (a.min <= b.min) ? a.min : b.min;
+        max = (a.max >= b.max) ? a.max : b.max;
+    }
 
     double size() const{
         return max - min;
@@ -23,6 +28,10 @@ struct Interval{
         if(x < min) return min;
         if(x > max) return max;
         return x;
+    }
+    Interval expand(const Interval interval,double delta) const{
+        double padding = delta/2;
+        return Interval(interval.min - padding, interval.max + padding);
     }
     static const Interval empty;
     static const Interval universe;

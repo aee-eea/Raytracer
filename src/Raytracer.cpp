@@ -65,33 +65,34 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
 
         MaterialHandle earthMat = assets.addMaterial<LambertianMaterial>(earthTex);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,0.5},1,red));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,1,-1},0.8,blue));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,1,-2},1.2,green));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1,0.5,-3},0.5,yellowMetal));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1,0.5,-3},0.5,whiteMetal));
+        world.add<Sphere>(glm::dvec3{0,1,0.5},1,red);
+        world.add<Sphere>(glm::dvec3{2,1,-1},0.8,blue);
+        world.add<Sphere>(glm::dvec3{-2,1,-2},1.2,green);
+        world.add<Sphere>(glm::dvec3{1,0.5,-3},0.5,yellowMetal);
+        world.add<Sphere>(glm::dvec3{-1,0.5,-3},0.5,whiteMetal);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,2,-4},1.5,blue));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{3,1,-5},1.0,red));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-3,1,-5},1.0,green));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,-0.5,-2},0.3,yellowMetal));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,-0.5,-2},0.3,whiteMetal));
+        world.add<Sphere>(glm::dvec3{0,2,-4},1.5,blue);
+        world.add<Sphere>(glm::dvec3{3,1,-5},1.0,red);
+        world.add<Sphere>(glm::dvec3{-3,1,-5},1.0,green);
+        world.add<Sphere>(glm::dvec3{0,-0.5,-2},0.3,yellowMetal);
+        world.add<Sphere>(glm::dvec3{2,-0.5,-2},0.3,whiteMetal);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,-0.5,-2},0.3,red));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{1.5,1.5,-6},1.0,blue));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-1.5,1.5,-6},1.0,green));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,3,-7},1.8,yellowMetal));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{2,3,-7},1.8,whiteMetal));
+        world.add<Sphere>(glm::dvec3{-2,-0.5,-2},0.3,red);
+        world.add<Sphere>(glm::dvec3{1.5,1.5,-6},1.0,blue);
+        world.add<Sphere>(glm::dvec3{-1.5,1.5,-6},1.0,green);
+        world.add<Sphere>(glm::dvec3{0,3,-7},1.8,yellowMetal);
+        world.add<Sphere>(glm::dvec3{2,3,-7},1.8,whiteMetal);
 
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,3,-7},1.8,red));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{4,1,-3},0.7,blue));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-4,1,-3},0.7,green));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,0,-8},2.0,yellowMetal));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,1,-10},1.5,whiteMetal));
+        world.add<Sphere>(glm::dvec3{-2,3,-7},1.8,red);
+        world.add<Sphere>(glm::dvec3{4,1,-3},0.7,blue);
+        world.add<Sphere>(glm::dvec3{-4,1,-3},0.7,green);
+        world.add<Sphere>(glm::dvec3{0,0,-8},2.0,yellowMetal);
+        world.add<Sphere>(glm::dvec3{0,1,-10},1.5,whiteMetal);
         
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{-2,5,1},2,checkeredMat));
-        hittableObjects.push_back(std::make_unique<Sphere>(glm::dvec3{0,3,0},0.3,earthMat));
+        world.add<Sphere>(glm::dvec3{-2,5,1},2,checkeredMat);
+        world.add<Sphere>(glm::dvec3{0,3,0},0.3,earthMat);
 
+        world.buildBVH();
 }
 
 void Raytracer::launch(){
@@ -154,8 +155,8 @@ const std::vector<Color>& Raytracer::getCurrentFrameBuffer(){
     return framebuffer;
 }
 
-const std::vector<std::unique_ptr<IHit>>& Raytracer::getHittables() const{
-    return hittableObjects;
+const World& Raytracer::getWorld() const{
+    return world;
 }
 const AssetManager& Raytracer::getAssets() const{
     return assets;

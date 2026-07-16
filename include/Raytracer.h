@@ -11,6 +11,7 @@
 #include <vector>
 #include <queue>
 #include <shared_mutex>
+#include "World.h"
 
 namespace rt{
 struct Tile{
@@ -46,7 +47,7 @@ public:
     void invalideRender();
 
     const std::vector<Color>& getCurrentFrameBuffer();
-    const std::vector<std::unique_ptr<IHit>>& getHittables() const;
+    const World& getWorld() const;
 
     void addPosCamera(glm::dvec3 add);
     void addRotCamera(double deltaYaw,double deltaPitch,double deltaRoll);
@@ -59,8 +60,7 @@ public:
     int getRenderWidth() const;
     int getRenderHeight() const;
 private:
-    std::vector<std::unique_ptr<IHit>> hittableObjects;
-
+    World world;
     std::unique_ptr<Tile[]> tiles; //tiles are non movable so it cant be a vector
     std::vector<TileProgressRecord> progressOfTiles;
     std::vector<Color> framebuffer;

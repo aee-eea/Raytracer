@@ -8,7 +8,10 @@
 using namespace rt;
 
 Sphere::Sphere(const glm::dvec3& center, double radius, MaterialHandle materialHandle)
- :  center{center},radius{std::fmax(0,radius)}, matHandle{materialHandle}{}
+ :  center{center},radius{std::fmax(0,radius)}, matHandle{materialHandle}{
+    glm::dvec3 rvec{radius,radius,radius};
+    bbox = AABB(center - rvec, center + rvec);
+ }
 
 bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     glm::dvec3 oc = center - ray.orig;
@@ -42,4 +45,8 @@ bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     record.u = phi / (2 * glm::pi<double>());
     record.v = theta / glm::pi<double>();
     return true;
+}
+
+AABB Sphere::boundingBox() const{
+    return bbox;
 }

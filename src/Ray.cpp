@@ -20,20 +20,10 @@ glm::dvec3 Ray::rayColor(const Raytracer& env,Interval rayT, int depth) const{
     if(depth <= 0){return glm::dvec3{0,0,0};}
 
     glm::dvec3 outputColor{0,0,0};
-    double closest = rayT.max;
-    bool hitted = false;
 
     HitRecord rec{};
-
-    //find the closest
-    for(const auto& surface : env.getHittables()){
-        if(surface->hit(*this,Interval{rayT.min,closest},rec)){
-            hitted = true;
-            closest = rec.t;
-        }
-    }
-
-    if(hitted){
+    
+    if(env.getWorld().hit(*this,Interval(0.001,infinity),rec)){
         Ray scattered(glm::dvec3{0,0,0},glm::dvec3{0,0,0});
         glm::dvec3 attentuation{0,0,0};
         if(env.getAssets().getMaterial(rec.material).scatter(*this,rec,attentuation,scattered,env)){

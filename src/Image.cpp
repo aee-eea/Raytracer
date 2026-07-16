@@ -12,13 +12,15 @@
 
 static int clamp(int x, int low, int high);
 
-rt::Image::~Image(){
+using namespace rt;
+
+Image::~Image(){
     if(fdata){
         stbi_image_free(fdata);
     }
 }
 
-bool rt::Image::load(const std::string& filePath){
+bool Image::load(const std::string& filePath){
     int n = 0;
     fdata = stbi_loadf(filePath.c_str(),&imageWidth,&imageHeight,&n,floatsPerPixel);
     std::cout << std::filesystem::absolute(filePath) << std::endl;
@@ -28,7 +30,7 @@ bool rt::Image::load(const std::string& filePath){
     floatsPerScanline = imageWidth * floatsPerPixel;
     return true;
 }
-glm::dvec3 rt::Image::getColor(int x, int y) const{
+glm::dvec3 Image::getColor(int x, int y) const{
     if(!fdata){ return glm::dvec3{1,0,1};}
 
     x = clamp(x,0,imageWidth);
@@ -41,14 +43,14 @@ glm::dvec3 rt::Image::getColor(int x, int y) const{
     return glm::dvec3{colorR,colorG,colorB};
 }
 
-int rt::Image::getHeight() const{
+int Image::getHeight() const{
     return (fdata) ? imageHeight : 0;
 }
-int rt::Image::getWidth() const{
+int Image::getWidth() const{
     return (fdata) ? imageWidth : 0;
 }
 
-rt::Image::Image(Image&& move) noexcept
+Image::Image(Image&& move) noexcept
     :fdata{move.fdata},
     imageHeight{move.imageHeight},
     imageWidth{move.imageWidth},
@@ -58,7 +60,7 @@ rt::Image::Image(Image&& move) noexcept
         move.imageWidth = 0;
         move.floatsPerScanline = 0;
 }
-rt::Image& rt::Image::operator=(Image&& move) noexcept{
+Image& rt::Image::operator=(Image&& move) noexcept{
     if(this != &move){
         stbi_image_free(fdata);
         fdata = move.fdata;
