@@ -17,7 +17,7 @@ public:
     bool hit(const Ray& ray, Interval rayT, HitRecord& record) const;
     AABB boundingBox() const;
 
-    void printDebug(){
+    void printDebug() const {
         std::cout << "Left: " << left << " Right: " << right << " isLeaf: " << isLeaf << " leftNode: " << leftNode << " RightNode: " << rightNode << " Start: " << start << " End: " << end << std::endl; 
     }
 

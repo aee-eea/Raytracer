@@ -12,41 +12,41 @@ class RaytracerCamera{
 public:
     RaytracerCamera(int imageWidth, int imageHeight);
 
-    void addPosition(glm::dvec3 newPos);
-    void addRotation(double deltaYaw,double deltaPitch,double deltaRoll);
-    void lookAt(glm::dvec3 newDir,glm::dvec3 up);
-    void changeLens(double newDefocusAngle, double newFocusDist);
-    void changeFov(double newFov);
+    void addPosition(glm::vec3 newPos);
+    void addRotation(float deltaYaw,float deltaPitch,float deltaRoll);
+    void lookAt(glm::vec3 newDir,glm::vec3 up);
+    void changeLens(float newDefocusAngle, float newFocusDist);
+    void changeFov(float newFov);
     void changeImageSize(int newWidth, int newHeight);
     Ray generateRayForPixel(int x, int y);
 
-    glm::dvec3 getUp() const;
-    glm::dvec3 getRight() const;
-    glm::dvec3 getForward() const;
+    glm::vec3 getUp() const;
+    glm::vec3 getRight() const;
+    glm::vec3 getForward() const;
     
 private:
 
-    double vfov{90};
-    glm::dvec3 cameraPos{0,0,0};
-    glm::dquat orientation{1,0,0,0};
+    float vfov{90};
+    glm::vec3 cameraPos{0,0,0};
+    glm::quat orientation{1,0,0,0};
 
-    double defocusAngle{0.5};
-    double focusDist{2};
+    float defocusAngle{0.5};
+    float focusDist{2};
 
-    double viewportHeight;
-    double viewportWidth;
+    float viewportHeight;
+    float viewportWidth;
     int imageWidth{0};
     int imageHeight{0};
 
-    glm::dvec3 viewportU;
-    glm::dvec3 viewportV;
-    glm::dvec3 defocusDiskU;
-    glm::dvec3 defocusDiskV;
-    glm::dvec3 pixelDeltaU;
-    glm::dvec3 pixelDeltaV;
-    glm::dvec3 viewportUpperLeftPos;
-    glm::dvec3 firstPixelPos;
-    glm::dvec3 cameraForward,cameraRight,cameraUp;
+    glm::vec3 viewportU;
+    glm::vec3 viewportV;
+    glm::vec3 defocusDiskU;
+    glm::vec3 defocusDiskV;
+    glm::vec3 pixelDeltaU;
+    glm::vec3 pixelDeltaV;
+    glm::vec3 viewportUpperLeftPos;
+    glm::vec3 firstPixelPos;
+    glm::vec3 cameraForward,cameraRight,cameraUp;
     void updateCamera();
 };
 }

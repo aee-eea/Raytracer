@@ -1,5 +1,6 @@
 #include "World.h"
 #include "AABB.h"
+#include "IHit.h"
 #include <unordered_map>
 
 using namespace rt;

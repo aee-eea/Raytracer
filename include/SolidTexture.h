@@ -7,7 +7,7 @@ class SolidTexture : public ITexture{
 public:
     SolidTexture(glm::dvec3 albedo) : albedo{albedo}{}
 
-    glm::dvec3 color(double, double, glm::dvec3,const Raytracer&) const override{
+    glm::dvec3 color(float, float, glm::vec3,const Raytracer&) const override{
         return albedo;
     }
 

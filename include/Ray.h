@@ -7,11 +7,11 @@ namespace rt{
 class Raytracer;
 
 struct Ray{
-    glm::dvec3 orig;
-    glm::dvec3 dir;
+    glm::vec3 orig;
+    glm::vec3 dir;
 
-    Ray(glm::dvec3 origin, glm::dvec3 direction);
-    glm::dvec3 at(double t) const;
-    glm::dvec3 rayColor(const Raytracer& env,Interval rayT,int depth) const;
+    Ray(glm::vec3 origin, glm::vec3 direction);
+    glm::vec3 at(float t) const;
+    glm::dvec3 rayColor(const Raytracer& env,Interval rayT,int depth,int& rayCounter) const;
 };
 }

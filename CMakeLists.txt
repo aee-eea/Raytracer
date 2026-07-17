@@ -27,8 +27,6 @@ src/RaylibFrontend.cpp
 src/Raytracer.cpp 
 src/Ray.cpp 
 src/Sphere.cpp 
-src/IHit.cpp
-src/Interval.cpp
 src/Camera.cpp
 src/AssetManager.cpp
 src/LambertianMaterial.cpp
@@ -36,7 +34,8 @@ src/MetalMaterial.cpp
 src/DielectricMaterial.cpp
 src/Image.cpp
 src/BVHNode.cpp
-src/World.cpp)
+src/World.cpp
+src/Parallelogram.cpp)
 
 target_include_directories(raytracer PRIVATE include external)
 target_link_libraries(raytracer PRIVATE raylib glm)

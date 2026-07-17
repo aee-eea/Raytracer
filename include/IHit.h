@@ -2,23 +2,26 @@
 #include <glm/glm.hpp>
 #include <Interval.h>
 #include "Handles.h"
+#include "Ray.h"
 
 namespace rt{
-class Ray;
 class HitRecord;
 class AABB;
 
 
 struct HitRecord{
-    glm::dvec3 point;
-    glm::dvec3 normal;
-    double t;
+    glm::vec3 point;
+    glm::vec3 normal;
+    float t;
     bool front_face;
     MaterialHandle material;
-    double u;
-    double v;
+    float u;
+    float v;
 
-    void setFaceNormal(const Ray& ray, const glm::dvec3 outwardNormal);
+    void setFaceNormal(const Ray& ray, const glm::vec3 outwardNormal){
+        front_face = dot(ray.dir, outwardNormal) < 0;
+        normal = front_face ? outwardNormal : -outwardNormal;
+    }
 };
 
 class IHit{

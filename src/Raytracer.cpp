@@ -16,13 +16,14 @@
 #include <algorithm>
 #include <mutex>
 #include <atomic>
+#include "Parallelogram.h"
 
 using namespace rt;
 
 static double linearToGamma(double linear);
 
-Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDepth,int threads)
-    : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{maxDepth}, threads{threads}{
+Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDepth,int threads,int tileSize)
+    : cam(renderWidth,renderHeight), renderWidth{renderWidth}, renderHeight{renderHeight}, maxSamples{maxSamples}, maxDepth{maxDepth}, threads{threads}, tileSize{tileSize}{
 
         int tilesX = (renderWidth  + tileSize - 1) / tileSize;   // ceil division
         int tilesY = (renderHeight + tileSize - 1) / tileSize;
@@ -46,11 +47,11 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
 
         ImageHandle earth = assets.addImage("resources/earthmap.jpg");
 
-        TextureHandle redColor = assets.addTexture<SolidTexture>(glm::dvec3{1,0,0});
-        TextureHandle greenColor = assets.addTexture<SolidTexture>(glm::dvec3{0,1,0});
-        TextureHandle blueColor = assets.addTexture<SolidTexture>(glm::dvec3{0,0,1});
-        TextureHandle grayColor = assets.addTexture<SolidTexture>(glm::dvec3{0.7,0.7,0.7});
-        TextureHandle goldenColor = assets.addTexture<SolidTexture>(glm::dvec3{0.8,0.8,0});
+        TextureHandle redColor = assets.addTexture<SolidTexture>(glm::vec3{1,0,0});
+        TextureHandle greenColor = assets.addTexture<SolidTexture>(glm::vec3{0,1,0});
+        TextureHandle blueColor = assets.addTexture<SolidTexture>(glm::vec3{0,0,1});
+        TextureHandle grayColor = assets.addTexture<SolidTexture>(glm::vec3{0.7,0.7,0.7});
+        TextureHandle goldenColor = assets.addTexture<SolidTexture>(glm::vec3{0.8,0.8,0});
 
         TextureHandle checkered = assets.addTexture<CheckeredTexture>(0.5,redColor,blueColor);
         TextureHandle earthTex = assets.addTexture<ImageTexture>(earth);
@@ -58,39 +59,40 @@ Raytracer::Raytracer(int renderWidth,int renderHeight,int maxSamples,int maxDept
         MaterialHandle red = assets.addMaterial<LambertianMaterial>(redColor);
         MaterialHandle green = assets.addMaterial<LambertianMaterial>(greenColor);
         MaterialHandle blue = assets.addMaterial<LambertianMaterial>(blueColor);
-        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(grayColor,0.2);
+        MaterialHandle whiteMetal = assets.addMaterial<MetalMaterial>(grayColor,0.05);
         MaterialHandle yellowMetal = assets.addMaterial<MetalMaterial>(goldenColor,0.1);
 
         MaterialHandle checkeredMat = assets.addMaterial<LambertianMaterial>(checkered);
 
         MaterialHandle earthMat = assets.addMaterial<LambertianMaterial>(earthTex);
 
-        world.add<Sphere>(glm::dvec3{0,1,0.5},1,red);
-        world.add<Sphere>(glm::dvec3{2,1,-1},0.8,blue);
-        world.add<Sphere>(glm::dvec3{-2,1,-2},1.2,green);
-        world.add<Sphere>(glm::dvec3{1,0.5,-3},0.5,yellowMetal);
-        world.add<Sphere>(glm::dvec3{-1,0.5,-3},0.5,whiteMetal);
+        world.add<Sphere>(glm::vec3{0,1,0.5},1,red);
+        world.add<Sphere>(glm::vec3{2,1,-1},0.8,blue);
+        world.add<Sphere>(glm::vec3{-2,1,-2},1.2,green);
+        world.add<Sphere>(glm::vec3{1,0.5,-3},0.5,yellowMetal);
+        world.add<Sphere>(glm::vec3{-1,0.5,-3},0.5,whiteMetal);
 
-        world.add<Sphere>(glm::dvec3{0,2,-4},1.5,blue);
-        world.add<Sphere>(glm::dvec3{3,1,-5},1.0,red);
-        world.add<Sphere>(glm::dvec3{-3,1,-5},1.0,green);
-        world.add<Sphere>(glm::dvec3{0,-0.5,-2},0.3,yellowMetal);
-        world.add<Sphere>(glm::dvec3{2,-0.5,-2},0.3,whiteMetal);
+        world.add<Sphere>(glm::vec3{0,2,-4},1.5,blue);
+        world.add<Sphere>(glm::vec3{3,1,-5},1.0,red);
+        world.add<Sphere>(glm::vec3{-3,1,-5},1.0,green);
+        world.add<Sphere>(glm::vec3{0,-0.5,-2},0.3,yellowMetal);
+        world.add<Sphere>(glm::vec3{2,-0.5,-2},0.3,whiteMetal);
 
-        world.add<Sphere>(glm::dvec3{-2,-0.5,-2},0.3,red);
-        world.add<Sphere>(glm::dvec3{1.5,1.5,-6},1.0,blue);
-        world.add<Sphere>(glm::dvec3{-1.5,1.5,-6},1.0,green);
-        world.add<Sphere>(glm::dvec3{0,3,-7},1.8,yellowMetal);
-        world.add<Sphere>(glm::dvec3{2,3,-7},1.8,whiteMetal);
+        world.add<Sphere>(glm::vec3{-2,-0.5,-2},0.3,red);
+        world.add<Sphere>(glm::vec3{1.5,1.5,-6},1.0,blue);
+        world.add<Sphere>(glm::vec3{-1.5,1.5,-6},1.0,green);
+        world.add<Sphere>(glm::vec3{0,3,-7},1.8,yellowMetal);
+        world.add<Sphere>(glm::vec3{2,3,-7},1.8,whiteMetal);
 
-        world.add<Sphere>(glm::dvec3{-2,3,-7},1.8,red);
-        world.add<Sphere>(glm::dvec3{4,1,-3},0.7,blue);
-        world.add<Sphere>(glm::dvec3{-4,1,-3},0.7,green);
-        world.add<Sphere>(glm::dvec3{0,0,-8},2.0,yellowMetal);
-        world.add<Sphere>(glm::dvec3{0,1,-10},1.5,whiteMetal);
+        world.add<Sphere>(glm::vec3{-2,3,-7},1.8,red);
+        world.add<Sphere>(glm::vec3{4,1,-3},0.7,blue);
+        world.add<Sphere>(glm::vec3{-4,1,-3},0.7,green);
+        world.add<Sphere>(glm::vec3{0,0,-8},2.0,yellowMetal);
+        world.add<Sphere>(glm::vec3{0,1,-10},1.5,whiteMetal);
         
-        world.add<Sphere>(glm::dvec3{-2,5,1},2,checkeredMat);
-        world.add<Sphere>(glm::dvec3{0,3,0},0.3,earthMat);
+        world.add<Sphere>(glm::vec3{-2,5,1},2,checkeredMat);
+        world.add<Sphere>(glm::vec3{0,3,0},0.3,earthMat);
+        world.add<Parallelogram>(glm::vec3{-5,-2,-13},glm::vec3{0,8,-5},glm::vec3{8,-8,0},earthMat);
 
         world.buildBVH();
 }
@@ -119,15 +121,18 @@ const std::vector<Color>& Raytracer::getCurrentFrameBuffer(){
             snapshot.samples = tile.samples;
             snapshot.colors = tile.colors;
             snapshot.frame = tile.frame;
+            snapshot.rayCounter = tile.rayCounter;
             tile.isOccupied.store(false,std::memory_order_release);
         } else{ continue; }
 
         if(snapshot.frame == thisFrame){
             progressOfTiles[i].samplesCollected = snapshot.samples;
             progressOfTiles[i].frame = snapshot.frame;
+            progressOfTiles[i].rayCounter = snapshot.rayCounter;
         }else{
             progressOfTiles[i].samplesCollected = 0;
             progressOfTiles[i].frame = thisFrame;
+            progressOfTiles[i].rayCounter = 0;
             continue;
         }
 
@@ -173,6 +178,9 @@ void Raytracer::putPixelInBuffer(int x,int y,Color color){
 
 Raytracer::~Raytracer(){
     isRunning.store(false,std::memory_order_relaxed);
+
+    isThereWork.store(true,std::memory_order_relaxed); //workaround to unstuck a thread from waiting for work
+    isThereWork.notify_all();
     for(std::thread& thread : workers){
         thread.join();
     }
@@ -180,6 +188,10 @@ Raytracer::~Raytracer(){
 
 void Raytracer::renderTileWorker(){
     while(isRunning.load(std::memory_order_relaxed)){
+
+        isThereWork.wait(false,std::memory_order_relaxed);
+        if(!isRunning.load(std::memory_order_relaxed)){goto killThread;}
+
         uint64_t tileToRender = nextTile.fetch_add(1,std::memory_order_relaxed);
 
         Tile& tile = tiles[tileToRender % tileCount];
@@ -190,25 +202,31 @@ void Raytracer::renderTileWorker(){
             tile.isOccupied.store(false,std::memory_order_relaxed); continue;}
         }else{continue;}
 
-        
-        for(int y = tile.startY; y < tile.height + tile.startY; y++){
-            for(int x = tile.startX; x < tile.width + tile.startX; x++){
-                if(tile.frame < curFrame.load(std::memory_order_relaxed)){goto restartTile;}
-                if(!isRunning.load(std::memory_order_relaxed)){tile.isOccupied.store(false,std::memory_order_release); goto killThread;}
-                int localX = x - tile.startX;
-                int localY = y - tile.startY;
-                camMutex.lock_shared();
-                Ray rayToFollow = cam.generateRayForPixel(x,y);
-                camMutex.unlock_shared();
+        for(int i = 0; i < tile.nextSamplesAdd; i++){
+            for(int y = tile.startY; y < tile.height + tile.startY; y++){
+                for(int x = tile.startX; x < tile.width + tile.startX; x++){
+                    if(tile.frame < curFrame.load(std::memory_order_relaxed)){goto restartTile;}
+                    if(!isRunning.load(std::memory_order_relaxed)){tile.isOccupied.store(false,std::memory_order_release); goto killThread;}
+                    int localX = x - tile.startX;
+                    int localY = y - tile.startY;
+                    camMutex.lock_shared();
+                    Ray rayToFollow = cam.generateRayForPixel(x,y);
+                    camMutex.unlock_shared();
 
-                tile.acummulatePixel(localX,localY,rayToFollow.rayColor(*this,Interval{0,infinity},maxDepth));
+                    int rayCount = 0;
+                    tile.acummulatePixel(localX,localY,rayToFollow.rayColor(*this,Interval{0,infinity},maxDepth,rayCount));
+                    tile.rayCounter += rayCount;
+                }
             }
+            tile.samples++;
         }
-        tile.samples++;
+        tile.nextSamplesAdd = std::min(tile.nextSamplesAdd * 2, maxSamples - tile.samples);
 
         if(tile.frame < curFrame.load(std::memory_order_relaxed)){
             restartTile:
             tile.samples = 0;
+            tile.nextSamplesAdd = 1;
+            tile.rayCounter = 0;
             std::fill(tile.colors.begin(),tile.colors.end(),glm::dvec3(0,0,0));
             tile.frame = curFrame.load(std::memory_order_relaxed);
         }
@@ -219,7 +237,7 @@ void Raytracer::renderTileWorker(){
     killThread:;
 }
 
-bool Raytracer::isFrameDone() const{
+bool Raytracer::isFrameDone(){
     int sumOfWork = 0;
     int expectedWork = maxSamples * tileCount;
     uint64_t forFrame = curFrame.load(std::memory_order_relaxed);
@@ -228,29 +246,47 @@ bool Raytracer::isFrameDone() const{
             sumOfWork += progressOfTiles[i].samplesCollected;
         }
     }
-    return (sumOfWork == expectedWork) ? true : false;
+    if(sumOfWork == expectedWork){
+        isThereWork.store(false,std::memory_order_relaxed);
+        isThereWork.notify_all();
+        return true;
+    }
+    return false;
 }
-void Raytracer::invalideRender(){
-    curFrame.fetch_add(1,std::memory_order_release);
+uint64_t Raytracer::countRays(){
+    int sumOfRays = 0;
+    uint64_t forFrame = curFrame.load(std::memory_order_relaxed);
+    for(int i = 0; i < tileCount; i++){
+        if(progressOfTiles[i].frame == forFrame){
+            sumOfRays += progressOfTiles[i].rayCounter;
+        }
+    }
+    return sumOfRays;
 }
 
-void Raytracer::addPosCamera(glm::dvec3 add){
+void Raytracer::invalideRender(){
+    curFrame.fetch_add(1,std::memory_order_release);
+    isThereWork.store(true,std::memory_order_relaxed);
+    isThereWork.notify_all();
+}
+
+void Raytracer::addPosCamera(glm::vec3 add){
     camMutex.lock();
     cam.addPosition(add);
     camMutex.unlock();
 }
-void Raytracer::addRotCamera(double deltaYaw,double deltaPitch,double deltaRoll){
+void Raytracer::addRotCamera(float deltaYaw,float deltaPitch,float deltaRoll){
     camMutex.lock();
     cam.addRotation(deltaYaw,deltaPitch,deltaRoll);
     camMutex.unlock();
 }
-glm::dvec3 Raytracer::getCamForwardVec() const{
+glm::vec3 Raytracer::getCamForwardVec() const{
     return cam.getForward();
 }
-glm::dvec3 Raytracer::getCamUpVec() const{
+glm::vec3 Raytracer::getCamUpVec() const{
     return cam.getUp();
 }
-glm::dvec3 Raytracer::getCamRightVec() const{
+glm::vec3 Raytracer::getCamRightVec() const{
     return cam.getRight();
 }
 

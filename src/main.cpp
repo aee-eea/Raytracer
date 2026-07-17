@@ -3,7 +3,7 @@
 #include "Raytracer.h"
 
 int main(){
-    rt::Raytracer raytracer(480,270,10,50,8);
+    rt::Raytracer raytracer(960,540,50,50,10,128);
     RaylibFrontend frontend(raytracer,1920,1080,"Test");
     frontend.start();
 }

@@ -7,26 +7,26 @@
 
 using namespace rt;
 
-Sphere::Sphere(const glm::dvec3& center, double radius, MaterialHandle materialHandle)
- :  center{center},radius{std::fmax(0,radius)}, matHandle{materialHandle}{
-    glm::dvec3 rvec{radius,radius,radius};
+Sphere::Sphere(const glm::vec3& center, float radius, MaterialHandle materialHandle)
+  : center{center} ,radius{std::fmax(0.0f,radius)}, matHandle{materialHandle}{
+    glm::vec3 rvec{radius,radius,radius};
     bbox = AABB(center - rvec, center + rvec);
  }
 
 bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
-    glm::dvec3 oc = center - ray.orig;
-    glm::dvec3 dir = ray.dir;
-    double a = glm::dot(dir,dir);
-    double b = -2.0 * glm::dot(dir, oc);
-    double c = glm::dot(oc,oc) - (radius * radius);
+    glm::vec3 oc = center - ray.orig;
+    glm::vec3 dir = ray.dir;
+    float a = glm::dot(dir,dir);
+    float b = -2.0 * glm::dot(dir, oc);
+    float c = glm::dot(oc,oc) - (radius * radius);
 
-    double discriminant = b*b - 4*a*c;
+    float discriminant = b*b - 4*a*c;
 
     if(discriminant < 0){return false;}
 
-    double sqrtd = glm::sqrt(discriminant);
+    float sqrtd = glm::sqrt(discriminant);
 
-    double root = (-b - sqrtd) / (2.0 * a);
+    float root = (-b - sqrtd) / (2.0 * a);
     if(!rayT.surrounds(root)){
         root = (-b + sqrtd) / (2.0 * a);
         if(!rayT.surrounds(root)){ return false; }
@@ -34,16 +34,16 @@ bool Sphere::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     
     record.t = root;
     record.point = ray.at(record.t);
-    glm::dvec3 outwardNormal = (record.point - center) / radius;
+    glm::vec3 outwardNormal = (record.point - center) / radius;
     record.setFaceNormal(ray, outwardNormal);
     record.material = matHandle;
 
 
-    double theta = glm::acos(outwardNormal.y);
-    double phi = glm::atan(-outwardNormal.z,outwardNormal.x) + glm::pi<double>();
+    float theta = glm::acos(outwardNormal.y);
+    float phi = glm::atan(-outwardNormal.z,outwardNormal.x) + glm::pi<float>();
 
-    record.u = phi / (2 * glm::pi<double>());
-    record.v = theta / glm::pi<double>();
+    record.u = phi / (2 * glm::pi<float>());
+    record.v = theta / glm::pi<float>();
     return true;
 }
 

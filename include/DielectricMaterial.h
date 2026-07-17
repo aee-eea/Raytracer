@@ -13,10 +13,10 @@ class Raytracer;
 
 class DielectricMaterial : public IMaterial{
 public:
-    DielectricMaterial(double refractionIndex);
+    DielectricMaterial(float refractionIndex);
     bool scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered,const Raytracer& env) const override;
 
 private:
-    double refractionIndex;
+    float refractionIndex;
 };
 }

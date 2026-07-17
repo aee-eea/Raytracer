@@ -8,59 +8,59 @@
 
 RaytracerCamera::RaytracerCamera(int imageWidth, int imageHeight){
     changeImageSize(imageWidth,imageHeight);
-    lookAt(glm::dvec3{0,0,-1},glm::dvec3{0,1,0});
+    lookAt(glm::vec3{0,0,-1},glm::vec3{0,1,0});
 
-    addPosition(glm::dvec3{2.5,3,1.5});
+    addPosition(glm::vec3{2.5,3,1.5});
 }
-void RaytracerCamera::addPosition(glm::dvec3 newPos){
+void RaytracerCamera::addPosition(glm::vec3 newPos){
     cameraPos += newPos;
     updateCamera();
 }
-void RaytracerCamera::addRotation(double deltaYaw,double deltaPitch,double deltaRoll){
-    glm::dquat qYaw   = glm::angleAxis(glm::radians(deltaYaw),   glm::dvec3(0,1,0));
-    glm::dquat qPitch = glm::angleAxis(glm::radians(deltaPitch), cameraRight);
-    glm::dquat qRoll  = glm::angleAxis(glm::radians(deltaRoll),  cameraForward);
+void RaytracerCamera::addRotation(float deltaYaw,float deltaPitch,float deltaRoll){
+    glm::quat qYaw   = glm::angleAxis(glm::radians(deltaYaw),   glm::vec3(0,1,0));
+    glm::quat qPitch = glm::angleAxis(glm::radians(deltaPitch), cameraRight);
+    glm::quat qRoll  = glm::angleAxis(glm::radians(deltaRoll),  cameraForward);
 
-    glm::dquat delta = qYaw * qPitch * qRoll;
+    glm::quat delta = qYaw * qPitch * qRoll;
 
     orientation = glm::normalize(delta * orientation);
     updateCamera();
 }
-void RaytracerCamera::lookAt(glm::dvec3 newDir, glm::dvec3 up){
+void RaytracerCamera::lookAt(glm::vec3 newDir, glm::vec3 up){
     orientation = glm::quatLookAt(glm::normalize(newDir - cameraPos), up);
     updateCamera();
 }
 void RaytracerCamera::updateCamera(){
-    double theta = glm::radians(vfov);
-    double h = glm::tan(theta/2);
+    float theta = glm::radians(vfov);
+    float h = glm::tan(theta/2);
     viewportHeight = 2 * h * focusDist;
-    viewportWidth = viewportHeight * (static_cast<double>(imageWidth) / imageHeight);
-    cameraForward = glm::normalize(orientation * glm::dvec3(0,0,-1));
-    cameraRight = glm::normalize(orientation * glm::dvec3(1,0,0));
-    cameraUp = glm::normalize(orientation * glm::dvec3(0,1,0));
+    viewportWidth = viewportHeight * (static_cast<float>(imageWidth) / imageHeight);
+    cameraForward = glm::normalize(orientation * glm::vec3(0,0,-1));
+    cameraRight = glm::normalize(orientation * glm::vec3(1,0,0));
+    cameraUp = glm::normalize(orientation * glm::vec3(0,1,0));
 
     viewportU = viewportWidth * cameraRight;
     viewportV = viewportHeight * -cameraUp;
 
-    pixelDeltaU = viewportU / static_cast<double>(imageWidth);
-    pixelDeltaV = viewportV / static_cast<double>(imageHeight);
+    pixelDeltaU = viewportU / static_cast<float>(imageWidth);
+    pixelDeltaV = viewportV / static_cast<float>(imageHeight);
 
     viewportUpperLeftPos = cameraPos
                             - (focusDist * -cameraForward)
-                            - (viewportU / 2.0)
-                            - (viewportV / 2.0);
-    firstPixelPos = viewportUpperLeftPos + (pixelDeltaU * 0.5) + (pixelDeltaV * 0.5);
+                            - (viewportU / 2.0f)
+                            - (viewportV / 2.0f);
+    firstPixelPos = viewportUpperLeftPos + (pixelDeltaU * 0.5f) + (pixelDeltaV * 0.5f);
 
-    double defocusRadius = focusDist * glm::tan(glm::radians(defocusAngle / 2));
+    float defocusRadius = focusDist * glm::tan(glm::radians(defocusAngle / 2));
     defocusDiskU = cameraRight * defocusRadius;
     defocusDiskV = cameraUp * defocusRadius;
 }
-void RaytracerCamera::changeLens(double newDefocusAngle, double newFocusDist){
+void RaytracerCamera::changeLens(float newDefocusAngle, float newFocusDist){
     defocusAngle = newDefocusAngle;
     focusDist = newFocusDist;
     updateCamera();
 }
-void RaytracerCamera::changeFov(double newFov){
+void RaytracerCamera::changeFov(float newFov){
     vfov = newFov;
     updateCamera();
 }
@@ -70,24 +70,24 @@ void RaytracerCamera::changeImageSize(int newWidth, int newHeight){
     updateCamera();
 }
 Ray RaytracerCamera::generateRayForPixel(int x, int y){
-    glm::dvec3 offset = sampleSquare();
-    glm::dvec3 pixelCenter = firstPixelPos + (pixelDeltaU * (static_cast<double>(x) + offset.x)) + (pixelDeltaV * (static_cast<double>(y) + offset.y));
-    glm::dvec3 origin = cameraPos;
+    glm::vec3 offset = sampleSquare();
+    glm::vec3 pixelCenter = firstPixelPos + (pixelDeltaU * (static_cast<float>(x) + offset.x)) + (pixelDeltaV * (static_cast<float>(y) + offset.y));
+    glm::vec3 origin = cameraPos;
     if(defocusAngle > 0){
-        glm::dvec3 random = randomInUnitDisk();
+        glm::vec3 random = randomInUnitDisk();
         origin = cameraPos + (random.x * defocusDiskU) + (random.y * defocusDiskV);
     }
-    glm::dvec3 rayDir = pixelCenter - origin;
+    glm::vec3 rayDir = pixelCenter - origin;
     Ray ray (origin, glm::normalize(rayDir));
     return ray;
 }
 
-glm::dvec3 RaytracerCamera::getUp() const{
+glm::vec3 RaytracerCamera::getUp() const{
     return cameraUp;
 }
-glm::dvec3 RaytracerCamera::getRight() const{
+glm::vec3 RaytracerCamera::getRight() const{
     return cameraRight;
 }
-glm::dvec3 RaytracerCamera::getForward() const{
+glm::vec3 RaytracerCamera::getForward() const{
     return cameraForward;
 }

@@ -12,13 +12,13 @@ class HitRecord;
 
 class Sphere : public IHit{
 public:
-    Sphere(const glm::dvec3& center, double radius, MaterialHandle matHandle);
+    Sphere(const glm::vec3& center, float radius, MaterialHandle matHandle);
     bool hit(const Ray& ray, Interval rayT, HitRecord& record) const override;
     AABB boundingBox() const override;
 
 private:
-    glm::dvec3 center;
-    double radius;
+    glm::vec3 center;
+    float radius;
     MaterialHandle matHandle;
     AABB bbox;
 };

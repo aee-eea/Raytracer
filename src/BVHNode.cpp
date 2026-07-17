@@ -13,9 +13,6 @@ static bool boxYCompare(const std::unique_ptr<IHit>& a, const std::unique_ptr<IH
 static bool boxZCompare(const std::unique_ptr<IHit>& a, const std::unique_ptr<IHit>& b);
 
 BVHNode::BVHNode(World& world, HittableHandle start, HittableHandle end): parentWorld{world}, start{start}, end{end}{
-    int axis = randomInt(0,2);
-
-    auto comparator = (axis == 0) ? boxXCompare : (axis == 1) ? boxYCompare : boxZCompare;
 
     size_t span = end - start;
     if(span == 1){
@@ -28,12 +25,18 @@ BVHNode::BVHNode(World& world, HittableHandle start, HittableHandle end): parent
         bbox = AABB(world.getObject(left).boundingBox(),world.getObject(right).boundingBox());
         isLeaf = true;
     }else{
+        bbox = AABB::empty;
+
+        for(size_t i = start; i < end; i++){
+            bbox = AABB(bbox, world.getObject(i).boundingBox());
+        }
+        int axis = bbox.longestAxis();
+        auto comparator = (axis == 0) ? boxXCompare : (axis == 1) ? boxYCompare : boxZCompare;
         std::sort(std::begin(world.getObjects()) + start, std::begin(world.getObjects()) + end, comparator);
         size_t mid = start + span/2;
 
         leftNode = world.addBVHNode(start,mid);
         rightNode = world.addBVHNode(mid,end);
-        bbox = AABB(world.getBVHNode(leftNode).boundingBox(),world.getBVHNode(rightNode).boundingBox());
     }
 }
 
@@ -41,7 +44,6 @@ bool BVHNode::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
     if(!bbox.hit(ray,rayT)){
         return false;
     }
-
     if(isLeaf){
         bool hitLeft = parentWorld.getObject(left).hit(ray,rayT,record);
         bool hitRight = parentWorld.getObject(right).hit(ray,Interval(rayT.min, hitLeft? record.t : rayT.max),record);
@@ -51,7 +53,6 @@ bool BVHNode::hit(const Ray& ray, Interval rayT, HitRecord& record) const{
         bool hitRight = parentWorld.getBVHNode(rightNode).hit(ray,Interval(rayT.min, hitLeft? record.t : rayT.max),record);
         return hitLeft || hitRight;
     }
-
     
 }
 AABB BVHNode::boundingBox() const{

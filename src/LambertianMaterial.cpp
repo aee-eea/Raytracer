@@ -11,7 +11,7 @@ using namespace rt;
 LambertianMaterial::LambertianMaterial(TextureHandle albedo): albedo{albedo}{}
 
 bool LambertianMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) const{
-    glm::dvec3 scatter_dir = rec.normal + randomUnitVector();
+    glm::vec3 scatter_dir = rec.normal + randomUnitVector();
 
     if(std::fabs(scatter_dir.x) < 1e-8 && std::fabs(scatter_dir.y) < 1e-8 && std::fabs(scatter_dir.z) < 1e-8){
         scatter_dir = rec.normal;

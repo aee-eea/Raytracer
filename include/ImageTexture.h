@@ -10,7 +10,7 @@ class ImageTexture: public ITexture{
 public:
     ImageTexture(ImageHandle handle): handle{handle}{}
 
-    glm::dvec3 color(double u, double v, glm::dvec3 point, const Raytracer& env) const override{
+    glm::dvec3 color(float u, float v, glm::vec3 point, const Raytracer& env) const override{
         u = Interval(0,1).clamp(u);
         v = 1.0 - Interval(0,1).clamp(v);
 

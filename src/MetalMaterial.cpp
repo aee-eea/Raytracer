@@ -7,10 +7,10 @@
 #include "ITexture.h"
 #include "Raytracer.h"
 
-MetalMaterial::MetalMaterial(TextureHandle albedo, double fuzz): albedo{albedo}, fuzz{std::fmin(fuzz,1)}{}
+MetalMaterial::MetalMaterial(TextureHandle albedo, float fuzz): albedo{albedo}, fuzz{std::fmin(fuzz,1.0f)}{}
 
 bool MetalMaterial::scatter(const Ray& ray, const HitRecord& rec, glm::dvec3& attenuation, Ray& scattered, const Raytracer& env) const{
-    glm::dvec3 reflected = reflect(ray.dir, rec.normal);
+    glm::vec3 reflected = reflect(ray.dir, rec.normal);
     reflected = glm::normalize(reflected) + (fuzz * randomUnitVector());
     scattered = Ray(rec.point, reflected);
     attenuation = env.getAssets().getTexture(albedo).color(rec.u,rec.v,rec.point,env);

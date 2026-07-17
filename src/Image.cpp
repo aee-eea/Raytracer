@@ -25,8 +25,7 @@ bool Image::load(const std::string& filePath){
     fdata = stbi_loadf(filePath.c_str(),&imageWidth,&imageHeight,&n,floatsPerPixel);
     std::cout << std::filesystem::absolute(filePath) << std::endl;
     if(!fdata){std::cout << filePath << " " << stbi_failure_reason() << std::endl; return false;}
-    if(n != floatsPerPixel){std::cout << "Wrong format, expected:  " << floatsPerPixel << " received: " << n << std::endl; return false;}
-
+    
     floatsPerScanline = imageWidth * floatsPerPixel;
     return true;
 }
